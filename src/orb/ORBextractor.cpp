@@ -94,49 +94,60 @@ static float IC_Angle(const Mat& image, Point2f pt, const vector<int>& u_max) {
   return fastAtan2((float)m_01, (float)m_10);
 }
 
-// const float factorPI = (float)(CV_PI / 180.f);
-// static void computeOrbDescriptor(const KeyPoint& kpt, const Mat& img, const Point* pattern, uchar* desc) {
-//   float angle = (float)kpt.angle * factorPI;
-//   float a = (float)cos(angle), b = (float)sin(angle);
+/**
+ * @brief 
+ * @param [in]  kpt      关键点坐标(以次为中心计算16x16范围内的描述子)
+ * @param [in]  img      输入图像(金字塔的一层)
+ * @param [in]  pattern  固定的pattern的起始地址
+ * @param [out] desc     输出描述子，32个int长度
+ */
+const float factorPI = (float)(CV_PI / 180.f);
+static void computeOrbDescriptor(const KeyPoint& kpt, const Mat& img, const Point* pattern, uchar* desc) {
+  float angle = (float)kpt.angle * factorPI;
+  float a = (float)cos(angle), b = (float)sin(angle);
 
-//   const uchar* center = &img.at<uchar>(cvRound(kpt.pt.y), cvRound(kpt.pt.x));
-//   const int step = (int)img.step;
+  const uchar* center = &img.at<uchar>(cvRound(kpt.pt.y), cvRound(kpt.pt.x));
+  const int step = (int)img.step;
+// 获取点对编码函数，某两个特殊位置像素点的灰度比较大小，为一位编码
+#define GET_VALUE(idx) center[cvRound(pattern[idx].x * b + pattern[idx].y * a) * step + cvRound(pattern[idx].x * a - pattern[idx].y * b)]
+  // 算8个点对的编码，循环32次，共256个点对
+  for (int i = 0; i < 32; ++i, pattern += 16) {
+    int t0, t1, val;
+    t0 = GET_VALUE(0);
+    t1 = GET_VALUE(1);
+    val = t0 < t1;
+    t0 = GET_VALUE(2);
+    t1 = GET_VALUE(3);
+    val |= (t0 < t1) << 1; // 位移+按位或，就是变长，正好一个Int 8位编码
+    t0 = GET_VALUE(4);
+    t1 = GET_VALUE(5);
+    val |= (t0 < t1) << 2;
+    t0 = GET_VALUE(6);
+    t1 = GET_VALUE(7);
+    val |= (t0 < t1) << 3;
+    t0 = GET_VALUE(8);
+    t1 = GET_VALUE(9);
+    val |= (t0 < t1) << 4;
+    t0 = GET_VALUE(10);
+    t1 = GET_VALUE(11);
+    val |= (t0 < t1) << 5;
+    t0 = GET_VALUE(12);
+    t1 = GET_VALUE(13);
+    val |= (t0 < t1) << 6;
+    t0 = GET_VALUE(14);
+    t1 = GET_VALUE(15);
+    val |= (t0 < t1) << 7;
 
-// #define GET_VALUE(idx) center[cvRound(pattern[idx].x * b + pattern[idx].y * a) * step + cvRound(pattern[idx].x * a - pattern[idx].y * b)]
+    desc[i] = (uchar)val;
+  }
 
-//   for (int i = 0; i < 32; ++i, pattern += 16) {
-//     int t0, t1, val;
-//     t0 = GET_VALUE(0);
-//     t1 = GET_VALUE(1);
-//     val = t0 < t1;
-//     t0 = GET_VALUE(2);
-//     t1 = GET_VALUE(3);
-//     val |= (t0 < t1) << 1;
-//     t0 = GET_VALUE(4);
-//     t1 = GET_VALUE(5);
-//     val |= (t0 < t1) << 2;
-//     t0 = GET_VALUE(6);
-//     t1 = GET_VALUE(7);
-//     val |= (t0 < t1) << 3;
-//     t0 = GET_VALUE(8);
-//     t1 = GET_VALUE(9);
-//     val |= (t0 < t1) << 4;
-//     t0 = GET_VALUE(10);
-//     t1 = GET_VALUE(11);
-//     val |= (t0 < t1) << 5;
-//     t0 = GET_VALUE(12);
-//     t1 = GET_VALUE(13);
-//     val |= (t0 < t1) << 6;
-//     t0 = GET_VALUE(14);
-//     t1 = GET_VALUE(15);
-//     val |= (t0 < t1) << 7;
+#undef GET_VALUE
+}
 
-//     desc[i] = (uchar)val;
-//   }
-
-// #undef GET_VALUE
-// }
-
+    /**
+     * @brief 计算brief描述子的pattern
+     * 在r=16的圆形区域，取256对点(P1,P2),比较灰度，进行编码，形成描述子
+     */
 static int bit_pattern_31_[256 * 4] = {
     8,   -3,  9,   5 /*mean (0), correlation (0)*/,
     4,   2,   7,   -12 /*mean (1.12461e-05), correlation (0.0437584)*/,
@@ -828,11 +839,11 @@ void ORBextractor::ComputeKeyPointsOctTree(vector<vector<KeyPoint> >& allKeypoin
   // for (int level = 0; level < nlevels; ++level) computeOrientation(mvImagePyramid[level], allKeypoints[level], umax);
 }
 
-// static void computeDescriptors(const Mat& image, vector<KeyPoint>& keypoints, Mat& descriptors, const vector<Point>& pattern) {
-//   descriptors = Mat::zeros((int)keypoints.size(), 32, CV_8UC1);
+static void computeDescriptors(const Mat& image, vector<KeyPoint>& keypoints, Mat& descriptors, const vector<Point>& pattern) {
+  descriptors = Mat::zeros((int)keypoints.size(), 32, CV_8UC1);
 
-//   for (size_t i = 0; i < keypoints.size(); i++) computeOrbDescriptor(keypoints[i], image, &pattern[0], descriptors.ptr((int)i));
-// }
+  for (size_t i = 0; i < keypoints.size(); i++) computeOrbDescriptor(keypoints[i], image, &pattern[0], descriptors.ptr((int)i));
+}
 
 /**
  * @brief  这里给()重载了，就是提取ORB特征
@@ -869,7 +880,7 @@ int ORBextractor::operator()(InputArray _image, InputArray _mask, vector<KeyPoin
   if (nkeypoints == 0)
     _descriptors.release();
   else {
-    _descriptors.create(nkeypoints, 32, CV_8U);  // 每个特征点的描述子长度为32
+    _descriptors.create(nkeypoints, 32, CV_8U);  // 每个特征点的描述子长度为32个int
     descriptors = _descriptors.getMat();
   }
 
@@ -880,6 +891,7 @@ int ORBextractor::operator()(InputArray _image, InputArray _mask, vector<KeyPoin
   int offset = 0;
   // Modified for speeding up stereo fisheye matching
   int monoIndex = 0;
+
   // 计算每层的描述子，所有层的描述子最终都放到descriptors里
   for (int level = 0; level < nlevels; ++level) {
     vector<KeyPoint>& keypoints = allKeypoints[level];
@@ -894,7 +906,7 @@ int ORBextractor::operator()(InputArray _image, InputArray _mask, vector<KeyPoin
     // Compute the descriptors
     // Mat desc = descriptors.rowRange(offset, offset + nkeypointsLevel);
     Mat desc = cv::Mat(nkeypointsLevel, 32, CV_8U);
-    // computeDescriptors(workingMat, keypoints, desc, pattern);
+    computeDescriptors(workingMat, keypoints, desc, pattern);
 
     offset += nkeypointsLevel;
 
@@ -913,7 +925,7 @@ int ORBextractor::operator()(InputArray _image, InputArray _mask, vector<KeyPoin
       //   stereoIndex--;
       // } else {
       _keypoints.at(monoIndex) = (*keypoint);
-      // desc.row(i).copyTo(descriptors.row(monoIndex));
+      desc.row(i).copyTo(descriptors.row(monoIndex));
       monoIndex++;
       // }
       i++;

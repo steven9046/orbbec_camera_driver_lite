@@ -127,6 +127,16 @@ int main(int argc, char** argv) {
       cv::Mat descriptors;
       int thresh = 20;
       extractor(mImGray, cv::Mat(), key_points, descriptors);
+      
+      // 输出所有descriptors
+      std::cout << "discriptor val : " << std::endl;
+      for(int i = 0;i < descriptors.rows; i ++){
+        for(int j = 0; j < descriptors.cols; j ++){
+          int val = descriptors.at<uchar>(i,j);
+          printf("%d ", val);
+        }
+        printf("\n");
+      }
       printf("get %d keypoints.\n", key_points.size());
       // do_something(mImGray, key_points, thresh);
       const auto& end_time = std::chrono::steady_clock::now();
