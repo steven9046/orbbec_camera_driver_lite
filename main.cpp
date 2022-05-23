@@ -48,7 +48,10 @@
 #define LOOP_NUM_FOR_TIME_MEASUREMENT 10
 
 #define NFEATURES 1000
-#define NTHRESH 20
+#define NTHRESH_INI 20
+#define NTHRESH_MIN 20
+#define NLEVELS 8
+#define SCALEFACTOR 1.2
 
 
 void do_something(cv::Mat &input_img, std::vector<cv::KeyPoint> &key_points, int threshold);
@@ -85,7 +88,7 @@ int main(int argc, char** argv) {
 
   /* Initialize orb extractor */
 
-  ORB_SLAM3::ORBextractor extractor(NFEATURES, NTHRESH);
+  ORB_SLAM3::ORBextractor extractor(NFEATURES, SCALEFACTOR, NLEVELS, NTHRESH_INI, NTHRESH_MIN);
 
   /*** Process for each frame ***/
   int32_t frame_cnt = 0;
