@@ -159,7 +159,7 @@ static int bit_pattern_31_[256 * 4] = {
     -6,  -13, -4,  -8 /*mean (0.101215), correlation (0.179716)*/,
     11,  -13, 12,  -8 /*mean (0.200641), correlation (0.192279)*/,
     4,   7,   5,   1 /*mean (0.205106), correlation (0.186848)*/,
-    5,   -3,  10,  -3 /*mean (0.234908), correDistributeOctTreelation (0.198942)*/,
+    5,   -3,  10,  -3 /*mean (0.234908), correlation (0.198942)*/,
     -4,  2,   -3,  7 /*mean (0.188237), correlation (0.21384)*/,
     -10, -12, -6,  11 /*mean (0.14865), correlation (0.23571)*/,
     5,   -12, 6,   -7 /*mean (0.222312), correlation (0.23324)*/,
@@ -344,7 +344,7 @@ static int bit_pattern_31_[256 * 4] = {
     -9,  9,   -4,  3 /*mean (0.236977), correlation (0.497739)*/,
     0,   3,   3,   -9 /*mean (0.24314), correlation (0.499398)*/,
     -12, 1,   -6,  1 /*mean (0.243297), correlation (0.489447)*/,
-    3,   2,   4,   -8 /*mean (0.00155196), coDistributeOctTreerrelation (0.553496)*/,
+    3,   2,   4,   -8 /*mean (0.00155196), correlation (0.553496)*/,
     -10, -10, -10, 9 /*mean (0.00239541), correlation (0.54297)*/,
     8,   -13, 12,  12 /*mean (0.0034413), correlation (0.544361)*/,
     -8,  -12, -6,  -5 /*mean (0.003565), correlation (0.551225)*/,
@@ -731,7 +731,8 @@ void ORBextractor::ComputeKeyPointsOctTree(vector<vector<KeyPoint> >& allKeypoin
 
     const float width = (maxBorderX - minBorderX);
     const float height = (maxBorderY - minBorderY);
-
+    // std::cout << "width: " << width << std::endl;
+    // std::cout << "height: " << height << std::endl;
     // 计算当前层图像里cell的数量
     const int nCols = width / W;
     const int nRows = height / W;
@@ -794,6 +795,8 @@ void ORBextractor::ComputeKeyPointsOctTree(vector<vector<KeyPoint> >& allKeypoin
           for (vector<cv::KeyPoint>::iterator vit = vKeysCell.begin(); vit != vKeysCell.end(); vit++) {
             (*vit).pt.x += j * wCell;
             (*vit).pt.y += i * hCell;
+            // std::cout << "x: " <<  j * wCell << std::endl;
+            // std::cout << "y: " <<  i * wCell << std::endl;
             vToDistributeKeys.push_back(*vit);
           }
         }
@@ -816,11 +819,13 @@ void ORBextractor::ComputeKeyPointsOctTree(vector<vector<KeyPoint> >& allKeypoin
       keypoints[i].pt.y += minBorderY;
       keypoints[i].octave = level;
       keypoints[i].size = scaledPatchSize;
+      // std::cout << "x: " <<  keypoints[i].pt.x << std::endl;
+      // std::cout << "y: " <<  keypoints[i].pt.y << std::endl;
     }
   }
 
   // compute orientations
-  for (int level = 0; level < nlevels; ++level) computeOrientation(mvImagePyramid[level], allKeypoints[level], umax);
+  // for (int level = 0; level < nlevels; ++level) computeOrientation(mvImagePyramid[level], allKeypoints[level], umax);
 }
 
 // static void computeDescriptors(const Mat& image, vector<KeyPoint>& keypoints, Mat& descriptors, const vector<Point>& pattern) {
@@ -898,7 +903,7 @@ int ORBextractor::operator()(InputArray _image, InputArray _mask, vector<KeyPoin
     for (vector<KeyPoint>::iterator keypoint = keypoints.begin(), keypointEnd = keypoints.end(); keypoint != keypointEnd; ++keypoint) {
       // Scale keypoint coordinates
       if (level != 0) {
-        keypoint->pt *= scale;
+        keypoint->pt *= scale; // 这里把金子塔里的坐标转换成了原图片对应的坐标
       }
 
       // 双目相机时，特征点可能在重叠区域
