@@ -42,6 +42,8 @@
 // for orb
 #include "src/orb/ORBextractor.h"
 #include "src/orb/Frame.h"
+#include "src/orb/Tracking.h"
+#include "src/orb/Settings.h"
 
 /*** Macro ***/
 #define WORK_DIR RESOURCE_DIR
@@ -76,13 +78,13 @@ int main(int argc, char** argv) {
   oni_camera.seOnitLDP(false);
   oni_camera.getCameraParams();
 
-  // #ifdef LINUX_X86
-  //   // Viewer for point cloud
-  //   viewer::Viewer main_viewer(480, 640, "pcl");
-  //   main_viewer.setInputCloud(oni_camera.point_cloud_);
-  //   std::thread display_loop;
-  //   display_loop = std::thread(&viewer::Viewer::run, &main_viewer);
-  // #endif
+  #ifdef LINUX_X86
+    // Viewer for point cloud
+    viewer::Viewer main_viewer(480, 640, "pcl");
+    main_viewer.setInputCloud(oni_camera.point_cloud_);
+    std::thread display_loop;
+    display_loop = std::thread(&viewer::Viewer::run, &main_viewer);
+  #endif
 
   // /* Initialize image processor library */
   // ImageProcessor::InputParam input_param = {WORK_DIR, 4};
@@ -92,7 +94,7 @@ int main(int argc, char** argv) {
 
   /* Initialize orb extractor */
 
-  ORB_SLAM3::ORBextractor ORB_extractor(NFEATURES, SCALEFACTOR, NLEVELS, NTHRESH_INI, NTHRESH_MIN);
+  // ORB_SLAM3::ORBextractor ORB_extractor(NFEATURES, SCALEFACTOR, NLEVELS, NTHRESH_INI, NTHRESH_MIN);
 
   // 相机内参
   cv::Mat K = cv::Mat::eye(3, 3, CV_32F);
@@ -112,7 +114,26 @@ int main(int argc, char** argv) {
   float ThDepth = THD;
   cv::Mat imDepth;
   float mDepthMapFactor = 0.001;
+  
+  // 先创建一个 setting 加载配置文件
+  ORB_SLAM3::Settings* settings_;
+  string strSettingsFile("/home/ss/orbbec_camera_driver_lite/src/orb/ZORBBEC.yaml");
+  cv::FileStorage fsSettings(strSettingsFile.c_str(), cv::FileStorage::READ);
+    if(!fsSettings.isOpened())
+    {
+       cerr << "Failed to open settings file at: " << strSettingsFile << endl;
+       exit(-1);
+    }
+  cv::FileNode node = fsSettings["File.version"];
+  if(!node.empty() && node.isString() && node.string() == "1.0"){
+        settings_ = new ORB_SLAM3::Settings(strSettingsFile, 0);
+        // mStrLoadAtlasFromFile = settings_->atlasLoadFile();
+        // mStrSaveAtlasToFile = settings_->atlasSaveFile();
+        std::cout << (*settings_) << std::endl;
+    }
 
+  // 这里创建一个 tracker, 因为没有加载配置文件，这里直接默认构造
+  // ORB_SLAM3::Tracking tracker(strSettingsFile);
   /*** Process for each frame ***/
   int32_t frame_cnt = 0;
   cv::namedWindow("raw_depth", 0);
@@ -131,7 +152,7 @@ int main(int argc, char** argv) {
         cv::imshow("raw_depth", imDepth);
         cv::waitKey(1);
       }
-      // oni_camera.generatePointCloud(uvc_camera.raw_rgb_);
+      oni_camera.generatePointCloud(uvc_camera.raw_rgb_);
     }
 
     // RGB
@@ -140,21 +161,17 @@ int main(int argc, char** argv) {
     if (!rgb_img.empty()) {
       const auto& start_time = std::chrono::steady_clock::now();
       // 测试函数
-      cv::Mat mImGray;
-      cv::cvtColor(rgb_img, mImGray, cv::COLOR_BGR2GRAY);
-      ORB_SLAM3::Frame mCurrentFrame(mImGray, imDepth, &ORB_extractor, K, DistCoef, bf, ThDepth);
-      std::vector<cv::KeyPoint> key_points;
-      cv::Mat descriptors;
-      int thresh = 20;
-      ORB_extractor(mImGray, cv::Mat(), key_points, descriptors);
-
-      // do_something(mImGray, key_points, thresh);
-      const auto& end_time = std::chrono::steady_clock::now();
-      double time_image_process = (end_time - start_time).count() / 1000000.0;
-      // 把keypoint画出来
-      for (int i = 0; i < key_points.size(); i++) {
-        cv::circle(image_for_show, cv::Point(key_points[i].pt.x, key_points[i].pt.y), 3, CV_RGB(0, 255, 0), 1);
-      }
+      // 这里执行 tracker 的 Grabimage
+      // tracker.GrabImageRGBD(rgb_img, imDepth);
+      // cv::Mat mImGray;
+      // cv::cvtColor(rgb_img, mImGray, cv::COLOR_BGR2GRAY);
+      // ORB_SLAM3::Frame mCurrentFrame(mImGray, imDepth, &ORB_extractor, K, DistCoef, bf, ThDepth);
+      // const auto& end_time = std::chrono::steady_clock::now();
+      // double time_image_process = (end_time - start_time).count() / 1000000.0;
+      // // 把keypoint画出来
+      // for (int i = 0; i < mCurrentFrame.mvKeysUn.size(); i++) {
+      //   cv::circle(image_for_show, cv::Point(mCurrentFrame.mvKeysUn[i].pt.x, mCurrentFrame.mvKeysUn[i].pt.y), 3, CV_RGB(0, 255, 0), 1);
+      // }
       cv::imshow("rgb_img", image_for_show);
       cv::waitKey(1);
     }

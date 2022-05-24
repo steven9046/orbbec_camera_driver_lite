@@ -31,7 +31,8 @@ include_directories (${PCL_INCLUDE_DIRS})
 include_directories (${Eigen_INCLUDE_DIRS})
 include_directories ("${PROJECT_SOURCE_DIR}/include;${PROJECT_SOURCE_DIR}/src")
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
-    include_directories (${Pangolin_INCLUDE_DIRS})
+    include_directories (${Pangolin_INCLUDE_DIRS}
+                         ${PROJECT_SOURCE_DIR}/Thirdparty/Sophus)
 endif()
 
 # tensorflow lite
@@ -64,6 +65,8 @@ add_executable(orbbec_camera_driver
                 src/frame.cpp
                 src/orb/ORBextractor.cpp
                 src/orb/Frame.cpp
+                src/orb/Tracking.cpp
+                src/orb/Settings.cpp
                 main.cpp
                 )
 # # For InferenceHelper

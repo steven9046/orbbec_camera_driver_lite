@@ -116,7 +116,7 @@ public:
     void ComputeStereoFromRGBD(const cv::Mat &imDepth);
 
     // Backprojects a keypoint (if stereo/depth info available) into 3D world coordinates.
-    // bool UnprojectStereo(const int &i, Eigen::Vector3f &x3D);
+    bool UnprojectStereo(const int &i, Eigen::Vector3f &x3D);
 
     // ConstraintPoseImu* mpcpi;
 

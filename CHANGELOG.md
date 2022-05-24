@@ -33,5 +33,18 @@ v1.1.0 @2022.5.23
 1. 添加Frame结构，只保留数据存储功能，只保留RGB-D的相关代码,其他的先注释掉
     a. scale相关变量，都是直接从 orbextractor 里拷贝过来的
     b. 奥比相机的 imDepth 和 RGB 图像没有对齐，需要重新计算，使得可以根据 RGB 的像素坐标直接查找到对应的深度
-    
+    TODO: Frame 里有 MapPoint 成员，所以需要移植 MapPoint (先把tracking 的 work frame 添加进来)
+
+
+v1.2.0 @2022.5.24
+1. 添加 tracking 线程
+    a. tracking 的构造需要一系列参数，这里需要创建一个 setting 类
+        robox 里也有类似的 Options 类，使用 jason parser 解析 json 文件
+        ORB_SLAM3 用的 cv::FIleStorage 存储并来解析 yaml 文件
+        当然还可以用别的例如 protobuf ?? 一些序列化的工具都可以用来存这些配置
+    b. 一个比较重要的成员 GeometricCamera, 暂时注释掉
+        这个类里封装好了许多相机相关的函数，例如三角化，极线搜索等，确实封装起来比较好，我们先不用，用的时候再加进来
+    c. 相机参数等都是通过 tracking 传给 Frame 的
+        setting --> tracking --> Frame
+
     

@@ -141,7 +141,7 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, ORBextractor* extrac
     UndistortKeyPoints();
 
     // 计算地图点的3D坐标
-    // ComputeStereoFromRGBD(imDepth);
+    ComputeStereoFromRGBD(imDepth);
 
     // mvpMapPoints = vector<MapPoint*>(N,static_cast<MapPoint*>(NULL));
 
@@ -844,20 +844,22 @@ void Frame::ComputeStereoFromRGBD(const cv::Mat &imDepth)
     }
 }
 
-// bool Frame::UnprojectStereo(const int &i, Eigen::Vector3f &x3D)
-// {
-//     const float z = mvDepth[i];
-//     if(z>0) {
-//         const float u = mvKeysUn[i].pt.x;
-//         const float v = mvKeysUn[i].pt.y;
-//         const float x = (u-cx)*z*invfx;
-//         const float y = (v-cy)*z*invfy;
-//         Eigen::Vector3f x3Dc(x, y, z);
-//         x3D = mRwc * x3Dc + mOw;
-//         return true;
-//     } else
-//         return false;
-// }
+//
+bool Frame::UnprojectStereo(const int &i, Eigen::Vector3f &x3D)
+{
+    const float z = mvDepth[i];
+    if(z>0) {
+        const float u = mvKeysUn[i].pt.x;
+        const float v = mvKeysUn[i].pt.y;
+        const float x = (u-cx)*z*invfx;
+        const float y = (v-cy)*z*invfy;
+        Eigen::Vector3f x3Dc(x, y, z);
+        // x3D = mRwc * x3Dc + mOw; // 我们没有世界坐标系
+        x3D = x3Dc;
+        return true;
+    } else
+        return false;
+}
 
 // bool Frame::imuIsPreintegrated()
 // {
@@ -945,10 +947,6 @@ void Frame::ComputeStereoFromRGBD(const cv::Mat &imDepth)
 //     }
 
 //     return true;
-// }
-
-// Eigen::Vector3f Frame::UnprojectStereoFishEye(const int &i){
-//     return mRwc * mvStereo3Dpoints[i] + mOw;
 // }
 
 } //namespace ORB_SLAM
