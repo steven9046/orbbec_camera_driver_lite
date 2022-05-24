@@ -56,18 +56,51 @@ bool OniCamera::getCameraParams() {
   memset(&cameraParams_, 0, sizeof(cameraParams_));
   Status rc = oni_device_.getProperty(openni::OBEXTENSION_ID_CAM_PARAMS, (uint8_t *)&cameraParams_, &data_size);
   if (!rc) {
-    std::cout << "successfully get camera params:"
+    std::cout << "successfully get amera params:\n"
               << "k[0]: " << cameraParams_.l_k[0] << "\n"
               << "k[1]: " << cameraParams_.l_k[1] << "\n"
               << "k[2]: " << cameraParams_.l_k[2] << "\n"
               << "k[3]: " << cameraParams_.l_k[3] << "\n"
               << "k[4]: " << cameraParams_.l_k[4] << "\n"
               << "k[5]: " << cameraParams_.l_k[5] << std::endl;
-    std::cout << "successfully get camera params:"
-              << "r_intr_p[0]: " << cameraParams_.r_intr_p[0] << "\n"
-              << "r_intr_p[1]: " << cameraParams_.r_intr_p[1] << "\n"
-              << "r_intr_p[2]: " << cameraParams_.r_intr_p[2] << "\n"
-              << "r_intr_p[3]: " << cameraParams_.r_intr_p[3] << std::endl;
+    std::cout << "successfully get RGB camera params:\n"
+              << "fx: " << cameraParams_.r_intr_p[0] << "\n"
+              << "fy: " << cameraParams_.r_intr_p[1] << "\n"
+              << "cx: " << cameraParams_.r_intr_p[2] << "\n"
+              << "cy: " << cameraParams_.r_intr_p[3] << std::endl;
+    std::cout << "successfully get RGB distortion params:\n"
+              << "k1: " << cameraParams_.r_k[0] << "\n"
+              << "k2: " << cameraParams_.r_k[1] << "\n"
+              << "p1: " << cameraParams_.r_k[2] << "\n"
+              << "p2: " << cameraParams_.r_k[3] << "\n"
+              << "k3: " << cameraParams_.r_k[4] << std::endl;
+
+    // 得到深度相机内参
+    fdx_ = cameraParams_.l_intr_p[0] * ((float)(ONI_WIDTH) / RESOULTION_X);   // 320 / 640
+    fdy_ = cameraParams_.l_intr_p[1] * ((float)(ONI_HEIGHT) / RESOULTION_Y);  // 200 /400
+    u0_ = cameraParams_.l_intr_p[2] * ((float)(ONI_WIDTH) / RESOULTION_X);
+    v0_ = cameraParams_.l_intr_p[3] * ((float)(ONI_HEIGHT) / RESOULTION_Y);
+
+    // RGB相机内参
+    rgb_fx_ = cameraParams_.r_intr_p[0] * ((float)(ORBBEC_RGB_WIDTH) / RESOULTION_X_RGB);
+    rgb_fy_ = cameraParams_.r_intr_p[1] * ((float)(ORBBEC_RGB_HEIGHT) / RESOULTION_Y_RGB);
+    rgb_cx_ = cameraParams_.r_intr_p[2] * ((float)(ORBBEC_RGB_WIDTH) / RESOULTION_X_RGB);
+    rgb_cy_ = cameraParams_.r_intr_p[3] * ((float)(ORBBEC_RGB_HEIGHT) / RESOULTION_Y_RGB);
+    
+    // DEPTH_2_RGB
+    mR << cameraParams_.r2l_r[0], cameraParams_.r2l_r[1], cameraParams_.r2l_r[2],
+		cameraParams_.r2l_r[3], cameraParams_.r2l_r[4], cameraParams_.r2l_r[5],
+		cameraParams_.r2l_r[6], cameraParams_.r2l_r[7], cameraParams_.r2l_r[8];
+
+    mT << cameraParams_.r2l_t[0], cameraParams_.r2l_t[1], cameraParams_.r2l_t[2]; 
+
+    // for (int i = 0; i < 4; i++) {
+    //   for (int j = 0; j < 4; j++) {
+    //     std::cout << " " << mRT(i, j);
+    //   }
+    //   std::cout << std::endl;
+    // }
+
     return true;
   } else {
     std::cout << "get camera params failed" << std::endl;
@@ -329,4 +362,45 @@ void OniCamera::generatePointCloud(const cv::Mat &rgb_frame) {
       // } //end else
     }  // innner loop
   }    // outerloop
+}
+
+void OniCamera::computeConvertedDepth(const cv::Mat &imDepth, cv::Mat &converted_depth){
+    // RGB的像素坐标，像素值为单位为m的深度
+    converted_depth = cv::Mat::zeros(ORBBEC_RGB_HEIGHT, ORBBEC_RGB_WIDTH, CV_32FC1);
+    for(int i = 0; i < imDepth.cols; i ++){
+        for(int j = 0; j < imDepth.rows; j ++){
+            uint16_t depth = imDepth.at<uint16_t>(j, i);
+            if(depth){
+              float tx = (i - u0_) / fdx_;
+              float ty = (j - v0_) / fdy_;
+              float px = depth * tx;
+              float py = depth * ty;
+              float pz = depth;
+              Eigen::Matrix<float,3,1> pointDepth;
+              pointDepth << px, py, pz;
+              // std::cout << "Depth pixel: " << std::endl;
+              // std::cout << pointDepth << std::endl;
+              Eigen::Matrix<float,3,1> pointRGB;
+              pointRGB = mR * pointDepth + mT;
+              // std::cout << "  RGB pixel: " << std::endl;
+              // std::cout << pointRGB << std::endl;
+              // 投影到RGB相机
+              float relative_x = static_cast<float>(pointRGB[0]) / static_cast<float>(pointRGB[2]);
+              float relative_y = static_cast<float>(pointRGB[1]) / static_cast<float>(pointRGB[2]);
+              // 像素坐标
+              float rgb_pixel_x = relative_x * rgb_fx_ + rgb_cx_;
+              float rgb_pixel_y = relative_y * rgb_fy_ + rgb_cy_;
+              bool valid_index = (0 <= rgb_pixel_x && rgb_pixel_x < ORBBEC_RGB_WIDTH) && (0 <= rgb_pixel_y && rgb_pixel_y < ORBBEC_RGB_HEIGHT);
+              if(valid_index){
+                converted_depth.at<float>(rgb_pixel_y, rgb_pixel_x) = pointRGB[2];
+              }
+            }
+        }
+    }
+    cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)); 
+    cv::dilate(converted_depth,converted_depth,element);
+    cv::flip(converted_depth, converted_depth, 1);
+    // cv::namedWindow("converted_depth", 0);
+    // cv::imshow("converted_depth", converted_depth);
+    // cv::waitKey(1);
 }

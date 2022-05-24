@@ -13,6 +13,7 @@ configure_file (
 # 这里没有版本要求，用的都是最基本的功能
 find_package(OpenCV REQUIRED)
 find_package(PCL REQUIRED)
+find_package(Eigen REQUIRED)
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
     find_package(Pangolin 0.4 REQUIRED)
 endif()
@@ -27,6 +28,7 @@ set (OPENNI2_LIBS "${OPENNI2_LIBS_DIR}/libOpenNI2.so;${OPENNI2_LIBS_DIR}/OpenNI2
 
 include_directories (${OpenCV_INCLUDE_DIRS})
 include_directories (${PCL_INCLUDE_DIRS})
+include_directories (${Eigen_INCLUDE_DIRS})
 include_directories ("${PROJECT_SOURCE_DIR}/include;${PROJECT_SOURCE_DIR}/src")
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
     include_directories (${Pangolin_INCLUDE_DIRS})
@@ -61,6 +63,7 @@ add_executable(orbbec_camera_driver
                 src/viewer.cpp
                 src/frame.cpp
                 src/orb/ORBextractor.cpp
+                src/orb/Frame.cpp
                 main.cpp
                 )
 # # For InferenceHelper
@@ -84,9 +87,11 @@ target_link_libraries(orbbec_camera_driver ImageProcessor)
 target_link_libraries(orbbec_camera_driver 
                     ${OpenCV_LIBRARIES}
                     ${PCL_LIBRARIES}
+                    ${Eigen_LIBRARIES}
                     ${UVC_LIBS}
                     ${OPENNI2_LIBS}
-                    ${TFLITE_LIBS})
+                    ${TFLITE_LIBS}
+                    )
 
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
     target_link_libraries(orbbec_camera_driver

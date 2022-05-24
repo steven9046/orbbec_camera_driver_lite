@@ -30,6 +30,9 @@
 #include <pcl/point_types.h>
 // openCV
 #include <opencv4/opencv2/opencv.hpp>
+// Eigen
+#include "Eigen/Core"
+
 // macros
 #define ONI_WIDTH 320
 #define ONI_HEIGHT 200
@@ -38,7 +41,11 @@
 #define XN_MODULE_PROPERTY_LDP_ENABLE 0x1080FFBE
 #define RGB_REGISTERATION 0
 #define RESOULTION_X 640
-#define RESOULTION_Y 480
+#define RESOULTION_Y 400
+#define ORBBEC_RGB_WIDTH 640
+#define ORBBEC_RGB_HEIGHT 480
+#define RESOULTION_X_RGB 640.0
+#define RESOULTION_Y_RGB 480.0
 #define MM2M 0.001
 
 // namespace oni_camera {
@@ -100,9 +107,19 @@ class OniCamera : public Camera {
    */
   void generatePointCloud(const cv::Mat& rgb_frame);
 
+  /**
+   * @brief Raw Depth in not regisitered to RGB. Create a Depth Mat here that are regisitered.
+   */
+  void computeConvertedDepth(const cv::Mat &imDepth, cv::Mat &converted_depth);
+
   char camera_loc_;                                     // camera bus loc
   std::string depth_uri_str_;                           // camera uri: 2bc5/060e@1/6, the last number is device number, it will varies when reboot.
   float fdx_, fdy_, u0_, v0_;                           // camera params
+  float rgb_fx_, rgb_fy_, rgb_cx_, rgb_cy_;
+  // cv::Mat mR, mT, mRT;
+  Eigen::Matrix<float,4,4> mRT;
+  Eigen::Matrix<float,3,3> mR;
+  Eigen::Matrix<float,3,1> mT;
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud_;  // point cloud generated. need to init or will crash.
 };
 // }  // namespace oni_camera
