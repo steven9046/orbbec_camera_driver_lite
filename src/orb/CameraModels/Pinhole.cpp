@@ -22,16 +22,25 @@
 
 //BOOST_CLASS_EXPORT_IMPLEMENT(ORB_SLAM3::Pinhole)
 
+/**
+ * @brief 几何相机只需要传入相机内参即可构建，实现以下功能
+ * 1. 基础投影功能 3D点 --> 像素坐标
+ * 2. 反投影   像素坐标 --> 归一化3D点(z=1)
+ * 3. 雅克比(优化时使用，没太整明白)
+ * 4. 极线约束
+ */
 namespace ORB_SLAM3 {
 //BOOST_CLASS_EXPORT_GUID(Pinhole, "Pinhole")
 
     long unsigned int GeometricCamera::nNextId=0;
-
+    
+    // 3D点 --> 像素坐标
+    // OpenCV版
     cv::Point2f Pinhole::project(const cv::Point3f &p3D) {
         return cv::Point2f(mvParameters[0] * p3D.x / p3D.z + mvParameters[2],
                            mvParameters[1] * p3D.y / p3D.z + mvParameters[3]);
     }
-
+    // Eigen 整数版
     Eigen::Vector2d Pinhole::project(const Eigen::Vector3d &v3D) {
         Eigen::Vector2d res;
         res[0] = mvParameters[0] * v3D[0] / v3D[2] + mvParameters[2];
@@ -39,7 +48,7 @@ namespace ORB_SLAM3 {
 
         return res;
     }
-
+    // Eigen 小数版
     Eigen::Vector2f Pinhole::project(const Eigen::Vector3f &v3D) {
         Eigen::Vector2f res;
         res[0] = mvParameters[0] * v3D[0] / v3D[2] + mvParameters[2];
@@ -47,22 +56,23 @@ namespace ORB_SLAM3 {
 
         return res;
     }
-
+    // OpenCV点 --> Eigen 像素坐标
     Eigen::Vector2f Pinhole::projectMat(const cv::Point3f &p3D) {
         cv::Point2f point = this->project(p3D);
         return Eigen::Vector2f(point.x, point.y);
     }
-
+    // ???
     float Pinhole::uncertainty2(const Eigen::Matrix<double,2,1> &p2D)
     {
         return 1.0;
     }
-
+    // 像素坐标 --> 归一化3D点
+    // OpenCV转Eigen版
     Eigen::Vector3f Pinhole::unprojectEig(const cv::Point2f &p2D) {
         return Eigen::Vector3f((p2D.x - mvParameters[2]) / mvParameters[0], (p2D.y - mvParameters[3]) / mvParameters[1],
                            1.f);
     }
-
+    // OpenCV版
     cv::Point3f Pinhole::unproject(const cv::Point2f &p2D) {
         return cv::Point3f((p2D.x - mvParameters[2]) / mvParameters[0], (p2D.y - mvParameters[3]) / mvParameters[1],
                            1.f);
@@ -90,13 +100,14 @@ namespace ORB_SLAM3 {
     //     return tvr->Reconstruct(vKeys1,vKeys2,vMatches12,T21,vP3D,vbTriangulated);
     // }
 
-
+    // 输出3x3内参矩阵
+    // OpenCV版
     cv::Mat Pinhole::toK() {
         cv::Mat K = (cv::Mat_<float>(3, 3)
                 << mvParameters[0], 0.f, mvParameters[2], 0.f, mvParameters[1], mvParameters[3], 0.f, 0.f, 1.f);
         return K;
     }
-
+    // Eigen版
     Eigen::Matrix3f Pinhole::toK_() {
         Eigen::Matrix3f K;
         K << mvParameters[0], 0.f, mvParameters[2], 0.f, mvParameters[1], mvParameters[3], 0.f, 0.f, 1.f;
@@ -105,7 +116,7 @@ namespace ORB_SLAM3 {
 
     /**
      * @brief 极线约束
-     * @param [in] pCamera2     相机参数
+     * @param [in] pCamera2     另一个几何相机
      * @param [in] kp1          Frame1里的点
      * @param [in] kp2          Frame2里的点
      * @param [in] R12          旋转矩阵

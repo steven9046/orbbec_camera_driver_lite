@@ -57,7 +57,7 @@ v1.2.1 @2022.5.25
         四元数 q 表示一个旋转 theta 度， q' 表示旋转 theta/2 度，作用在 v 上得到 v'， v' = q'vq'*
         q的左右乘法都可以用矩阵表示 Lq Rq -->  v' = Lq'·Rq'·v
         https://krasjet.github.io/quaternion/quaternion.pdf
-    c. 添加 GeometricTools 
+    c. 添加 GeometricTools, 这个函数在2视图重建时使用到了
         TODO: 这里这个三角化涉及 Eigen 的用法
         https://zhuanlan.zhihu.com/p/51835837
     d. 添加 TwoViewReconstruction
@@ -65,4 +65,13 @@ v1.2.1 @2022.5.25
     e. 添加 Pinhole 
         这里涉及很多单视图、多视图几何的原理
 
-    
+v1.2.2 @2022.5.25
+1. 激活 Setting 里的 GeometricCamera 相关数据
+    a. GeometricCamera 指针 calibration1_ originalCalib1_
+    b. 畸变系数 vPinHoleDistorsion1_
+    c. 加载函数 readCamera1
+    PS: 
+    1.需要把 GeometricCamera 里的 Reconstruct 注释掉，否则这个纯虚函数不实现，Pinhole就无法实例化
+    2.GeometricCamera 实例化只需要传入相机内参，内参就是相机的一切
+    3.畸变系数为什么不放在 GeometricCamera 里呢？
+2. 

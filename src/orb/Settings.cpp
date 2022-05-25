@@ -18,7 +18,7 @@
 
 #include "Settings.h"
 
-// #include "CameraModels/Pinhole.h"
+#include "CameraModels/Pinhole.h"
 // #include "CameraModels/KannalaBrandt8.h"
 
 // #include "System.h"
@@ -155,7 +155,7 @@ namespace ORB_SLAM3 {
         }
 
         //Read first camera
-        // readCamera1(fSettings);
+        readCamera1(fSettings);
         cout << "\t-Loaded camera 1" << endl;
 
         // //Read second camera if stereo (not rectified)
@@ -197,102 +197,58 @@ namespace ORB_SLAM3 {
     }
 
     /**
-     * @brief 
-     * 1. 读取相机模型类型 pinhole，并构造相应相机模型，pinhole相机模型主要就是四个相机参数
-     * 2. 
-     * 
+     * @brief 读取相机模型类型 Pinhole，并构造相应相机模型
+     * 1. 读取内参
+     * 2. 读取畸变系数
      */
-    // void Settings::readCamera1(cv::FileStorage &fSettings) {
-    //     bool found;
+    void Settings::readCamera1(cv::FileStorage &fSettings) {
+        bool found;
 
-    //     //Read camera model
-    //     string cameraModel = readParameter<string>(fSettings,"Camera.type",found);
+        //Read camera model
+        string cameraModel = readParameter<string>(fSettings,"Camera.type",found);
 
-    //     vector<float> vCalibration;
-    //     if (cameraModel == "PinHole") {
-    //         cameraType_ = PinHole;
+        vector<float> vCalibration;
+        if (cameraModel == "PinHole") {
+            cameraType_ = PinHole;
 
-    //         //Read intrinsic parameters
-    //         float fx = readParameter<float>(fSettings,"Camera1.fx",found);
-    //         float fy = readParameter<float>(fSettings,"Camera1.fy",found);
-    //         float cx = readParameter<float>(fSettings,"Camera1.cx",found);
-    //         float cy = readParameter<float>(fSettings,"Camera1.cy",found);
+            //Read intrinsic parameters
+            float fx = readParameter<float>(fSettings,"Camera1.fx",found);
+            float fy = readParameter<float>(fSettings,"Camera1.fy",found);
+            float cx = readParameter<float>(fSettings,"Camera1.cx",found);
+            float cy = readParameter<float>(fSettings,"Camera1.cy",found);
 
-    //         vCalibration = {fx, fy, cx, cy};
+            vCalibration = {fx, fy, cx, cy};
 
-    //         // calibration1_ = new Pinhole(vCalibration);
-    //         // originalCalib1_ = new Pinhole(vCalibration);
+            calibration1_ = new Pinhole(vCalibration);
+            originalCalib1_ = new Pinhole(vCalibration);
 
-    //         //Check if it is a distorted PinHole
-    //         readParameter<float>(fSettings,"Camera1.k1",found,false);
-    //         if(found){
-    //             readParameter<float>(fSettings,"Camera1.k3",found,false);
-    //             if(found){
-    //                 vPinHoleDistorsion1_.resize(5);
-    //                 vPinHoleDistorsion1_[4] = readParameter<float>(fSettings,"Camera1.k3",found);
-    //             }
-    //             else{
-    //                 vPinHoleDistorsion1_.resize(4);
-    //             }
-    //             vPinHoleDistorsion1_[0] = readParameter<float>(fSettings,"Camera1.k1",found);
-    //             vPinHoleDistorsion1_[1] = readParameter<float>(fSettings,"Camera1.k2",found);
-    //             vPinHoleDistorsion1_[2] = readParameter<float>(fSettings,"Camera1.p1",found);
-    //             vPinHoleDistorsion1_[3] = readParameter<float>(fSettings,"Camera1.p2",found);
-    //         }
+            //Check if it is a distorted PinHole
+            readParameter<float>(fSettings,"Camera1.k1",found,false);
+            if(found){
+                readParameter<float>(fSettings,"Camera1.k3",found,false);
+                if(found){
+                    vPinHoleDistorsion1_.resize(5);
+                    vPinHoleDistorsion1_[4] = readParameter<float>(fSettings,"Camera1.k3",found);
+                }
+                else{
+                    vPinHoleDistorsion1_.resize(4);
+                }
+                vPinHoleDistorsion1_[0] = readParameter<float>(fSettings,"Camera1.k1",found);
+                vPinHoleDistorsion1_[1] = readParameter<float>(fSettings,"Camera1.k2",found);
+                vPinHoleDistorsion1_[2] = readParameter<float>(fSettings,"Camera1.p1",found);
+                vPinHoleDistorsion1_[3] = readParameter<float>(fSettings,"Camera1.p2",found);
+            }
 
-    //         // //Check if we need to correct distortion from the images
-    //         // if((sensor_ == System::MONOCULAR || sensor_ == System::IMU_MONOCULAR) && vPinHoleDistorsion1_.size() != 0){
-    //         //     bNeedT++oUndistort_ = true;
-    //         // }
-    //     }
-    //     else if(cameraModel == "Rectified"){
-    //         cameraType_ = Rectified;
-
-    //         //Read intrinsic parameters
-    //         float fx = readParameter<float>(fSettings,"Camera1.fx",found);
-    //         float fy = readParameter<float>(fSettings,"Camera1.fy",found);
-    //         float cx = readParameter<float>(fSettings,"Camera1.cx",found);
-    //         float cy = readParameter<float>(fSettings,"Camera1.cy",found);
-
-    //         vCalibration = {fx, fy, cx, cy};
-
-    //         // calibration1_ = new Pinhole(vCalibration);
-    //         // originalCalib1_ = new Pinhole(vCalibration);
-
-    //         //Rectified images are assumed to be ideal PinHole images (no distortion)
-    //     }
-    //     else if(cameraModel == "KannalaBrandt8"){
-    //         cameraType_ = KannalaBrandt;
-
-    //         //Read intrinsic parameters
-    //         float fx = readParameter<float>(fSettings,"Camera1.fx",found);
-    //         float fy = readParameter<float>(fSettings,"Camera1.fy",found);
-    //         float cx = readParameter<float>(fSettings,"Camera1.cx",found);
-    //         float cy = readParameter<float>(fSettings,"Camera1.cy",found);
-
-    //         float k0 = readParameter<float>(fSettings,"Camera1.k1",found);
-    //         float k1 = readParameter<float>(fSettings,"Camera1.k2",found);
-    //         float k2 = readParameter<float>(fSettings,"Camera1.k3",found);
-    //         float k3 = readParameter<float>(fSettings,"Camera1.k4",found);
-
-    //         vCalibration = {fx,fy,cx,cy,k0,k1,k2,k3};
-
-    //         // calibration1_ = new KannalaBrandt8(vCalibration);
-    //         // originalCalib1_ = new KannalaBrandt8(vCalibration);
-
-    //         // if(sensor_ == System::STEREO || sensor_ == System::IMU_STEREO){
-    //         //     int colBegin = readParameter<int>(fSettings,"Camera1.overlappingBegin",found);
-    //         //     int colEnd = readParameter<int>(fSettings,"Camera1.overlappingEnd",found);
-    //         //     vector<int> vOverlapping = {colBegin, colEnd};
-
-    //         //     static_cast<KannalaBrandt8*>(calibration1_)->mvLappingArea = vOverlapping;
-    //         // }
-    //     }
-    //     else{
-    //         cerr << "Error: " << cameraModel << " not known" << endl;
-    //         exit(-1);
-    //     }
-    // }
+            // //Check if we need to correct distortion from the images
+            // if((sensor_ == System::MONOCULAR || sensor_ == System::IMU_MONOCULAR) && vPinHoleDistorsion1_.size() != 0){
+            //     bNeedT++oUndistort_ = true;
+            // }
+        }
+        else{
+            cerr << "Error: " << cameraModel << " not known" << endl;
+            exit(-1);
+        }
+    }
 
     // void Settings::readCamera2(cv::FileStorage &fSettings) {
     //     bool found;
