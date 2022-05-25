@@ -28,7 +28,7 @@
 #include <opencv4/opencv2/imgproc/imgproc.hpp>
 #include <opencv4/opencv2/features2d/features2d.hpp>
 
-// #include "CameraModels/GeometricCamera.h" // 这个几何相机是用来三角化的
+#include "CameraModels/GeometricCamera.h" // 这个几何相机是用来三角化的
 
 #include <unistd.h>
 #include <stdio.h>

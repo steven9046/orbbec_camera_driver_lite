@@ -46,5 +46,23 @@ v1.2.0 @2022.5.24
         这个类里封装好了许多相机相关的函数，例如三角化，极线搜索等，确实封装起来比较好，我们先不用，用的时候再加进来
     c. 相机参数等都是通过 tracking 传给 Frame 的
         setting --> tracking --> Frame
+    d. Settings 里有位姿信息，所以需要李代数表示，添加了 Sophus 库
+       https://www.guyuehome.com/34708
+
+v1.2.1 @2022.5.25
+1. 添加 GeometricCamera
+    几何相机里封装了一些相机模型相关的方法，可以提高代码复用率
+    a. 添加 g2o 库，因为几何相机里要用到
+    b. 添加 Converter 在 g2o sophus opencv 之间的相互转换
+        四元数 q 表示一个旋转 theta 度， q' 表示旋转 theta/2 度，作用在 v 上得到 v'， v' = q'vq'*
+        q的左右乘法都可以用矩阵表示 Lq Rq -->  v' = Lq'·Rq'·v
+        https://krasjet.github.io/quaternion/quaternion.pdf
+    c. 添加 GeometricTools 
+        TODO: 这里这个三角化涉及 Eigen 的用法
+        https://zhuanlan.zhihu.com/p/51835837
+    d. 添加 TwoViewReconstruction
+        Reconstruct 这个需要 DBoW, 先注释掉
+    e. 添加 Pinhole 
+        这里涉及很多单视图、多视图几何的原理
 
     
