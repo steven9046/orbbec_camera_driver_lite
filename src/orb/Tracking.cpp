@@ -554,10 +554,10 @@ Tracking::~Tracking()
  * 6. ORB 的一些阈值
  */
 void Tracking::newParameterLoader(Settings *settings) {
-    // mpCamera = settings->camera1();
+    mpCamera = settings->camera1();
     // mpCamera = mpAtlas->AddCamera(mpCamera); // Atlas里的camera也是参数加载的，都是同一个
 
-    // Frame里不是已经去畸变了么，这里还要去畸变？(Frame里只给keypoint去畸变了，Frame里的相机参数是通过这tracking传进去的)
+    // Frame里的相机参数是通过这tracking传进去的，Frame里只给keypoint去畸变了
     if(settings->needToUndistort()){
         mDistCoef = settings->camera1DistortionCoef();
     }
@@ -572,17 +572,17 @@ void Tracking::newParameterLoader(Settings *settings) {
     // Frame 的参数是通过这个传进去的
     // OpenCv矩阵
     mK = cv::Mat::eye(3,3,CV_32F);
-    // mK.at<float>(0,0) = mpCamera->getParameter(0);
-    // mK.at<float>(1,1) = mpCamera->getParameter(1);
-    // mK.at<float>(0,2) = mpCamera->getParameter(2);
-    // mK.at<float>(1,2) = mpCamera->getParameter(3);
+    mK.at<float>(0,0) = mpCamera->getParameter(0);
+    mK.at<float>(1,1) = mpCamera->getParameter(1);
+    mK.at<float>(0,2) = mpCamera->getParameter(2);
+    mK.at<float>(1,2) = mpCamera->getParameter(3);
 
     // Eigen矩阵
     mK_.setIdentity();
-    // mK_(0,0) = mpCamera->getParameter(0);
-    // mK_(1,1) = mpCamera->getParameter(1);
-    // mK_(0,2) = mpCamera->getParameter(2);
-    // mK_(1,2) = mpCamera->getParameter(3);
+    mK_(0,0) = mpCamera->getParameter(0);
+    mK_(1,1) = mpCamera->getParameter(1);
+    mK_(0,2) = mpCamera->getParameter(2);
+    mK_(1,2) = mpCamera->getParameter(3);
 
     // if((mSensor==System::STEREO || mSensor==System::IMU_STEREO || mSensor==System::IMU_RGBD) &&
     //     settings->cameraType() == Settings::KannalaBrandt){

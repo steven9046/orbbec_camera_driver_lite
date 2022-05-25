@@ -74,4 +74,5 @@ v1.2.2 @2022.5.25
     1.需要把 GeometricCamera 里的 Reconstruct 注释掉，否则这个纯虚函数不实现，Pinhole就无法实例化
     2.GeometricCamera 实例化只需要传入相机内参，内参就是相机的一切
     3.畸变系数为什么不放在 GeometricCamera 里呢？
-2. 
+2. 激活 Tracking 里的 GeometricCamera 相关数据
+    只是在 newParameterLoader 里进行了初始化

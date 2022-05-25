@@ -38,7 +38,7 @@
 #include "Settings.h"
 #include <sophus/se3.hpp>
 
-// #include "GeometricCamera.h"
+#include "CameraModels/GeometricCamera.h"
 
 #include <mutex>
 #include <unordered_set>
@@ -332,7 +332,7 @@ protected:
     // double mTime_LocalMapTrack;
     // double mTime_NewKF_Dec;
 
-    // GeometricCamera* mpCamera, *mpCamera2;
+    GeometricCamera* mpCamera, *mpCamera2;
 
     // int initID, lastID;
 
