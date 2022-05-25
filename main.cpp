@@ -78,13 +78,13 @@ int main(int argc, char** argv) {
   oni_camera.seOnitLDP(false);
   oni_camera.getCameraParams();
 
-  #ifdef LINUX_X86
-    // Viewer for point cloud
-    viewer::Viewer main_viewer(480, 640, "pcl");
-    main_viewer.setInputCloud(oni_camera.point_cloud_);
-    std::thread display_loop;
-    display_loop = std::thread(&viewer::Viewer::run, &main_viewer);
-  #endif
+  // #ifdef LINUX_X86
+  //   // Viewer for point cloud
+  //   viewer::Viewer main_viewer(480, 640, "pcl");
+  //   main_viewer.setInputCloud(oni_camera.point_cloud_);
+  //   std::thread display_loop;
+  //   display_loop = std::thread(&viewer::Viewer::run, &main_viewer);
+  // #endif
 
   // /* Initialize image processor library */
   // ImageProcessor::InputParam input_param = {WORK_DIR, 4};
@@ -133,11 +133,12 @@ int main(int argc, char** argv) {
     }
 
   // 这里创建一个 tracker, 因为没有加载配置文件，这里直接默认构造
-  // ORB_SLAM3::Tracking tracker(strSettingsFile);
+  ORB_SLAM3::Tracking tracker(settings_);
   /*** Process for each frame ***/
   int32_t frame_cnt = 0;
   cv::namedWindow("raw_depth", 0);
   cv::namedWindow("rgb_img", 0);
+
   while (1) {
     // DEPTH
     oni_camera.GetOniStreamData();
@@ -152,7 +153,7 @@ int main(int argc, char** argv) {
         cv::imshow("raw_depth", imDepth);
         cv::waitKey(1);
       }
-      oni_camera.generatePointCloud(uvc_camera.raw_rgb_);
+      // oni_camera.generatePointCloud(uvc_camera.raw_rgb_);
     }
 
     // RGB
@@ -162,16 +163,14 @@ int main(int argc, char** argv) {
       const auto& start_time = std::chrono::steady_clock::now();
       // 测试函数
       // 这里执行 tracker 的 Grabimage
-      // tracker.GrabImageRGBD(rgb_img, imDepth);
-      // cv::Mat mImGray;
-      // cv::cvtColor(rgb_img, mImGray, cv::COLOR_BGR2GRAY);
-      // ORB_SLAM3::Frame mCurrentFrame(mImGray, imDepth, &ORB_extractor, K, DistCoef, bf, ThDepth);
-      // const auto& end_time = std::chrono::steady_clock::now();
-      // double time_image_process = (end_time - start_time).count() / 1000000.0;
-      // // 把keypoint画出来
-      // for (int i = 0; i < mCurrentFrame.mvKeysUn.size(); i++) {
-      //   cv::circle(image_for_show, cv::Point(mCurrentFrame.mvKeysUn[i].pt.x, mCurrentFrame.mvKeysUn[i].pt.y), 3, CV_RGB(0, 255, 0), 1);
-      // }
+      tracker.GrabImageRGBD(rgb_img, imDepth);
+      std::cout <<  tracker.mCurrentFrame.mvKeysUn.size() << std::endl;
+      const auto& end_time = std::chrono::steady_clock::now();
+      double time_image_process = (end_time - start_time).count() / 1000000.0;
+      // 把keypoint画出来
+      for (int i = 0; i < tracker.mCurrentFrame.mvKeysUn.size(); i++) {
+        cv::circle(image_for_show, cv::Point(tracker.mCurrentFrame.mvKeysUn[i].pt.x, tracker.mCurrentFrame.mvKeysUn[i].pt.y), 3, CV_RGB(0, 255, 0), 1);
+      }
       cv::imshow("rgb_img", image_for_show);
       cv::waitKey(1);
     }

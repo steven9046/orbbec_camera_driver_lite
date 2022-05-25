@@ -52,7 +52,7 @@ namespace ORB_SLAM3
 // class LocalMapping;
 // class LoopClosing;
 // class System;
-// class Settings;
+class Settings;
 
 class Tracking
 {  
@@ -69,7 +69,7 @@ public:
 //     bool ParseIMUParamFile(cv::FileStorage &fSettings);
 
 //     // Preprocess the input and call Track(). Extract features and performs stereo matching.
-    Sophus::SE3f GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD);
+    void GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD);
 
 //     void GrabImuData(const IMU::Point &imuMeasurement);
 
@@ -131,7 +131,7 @@ public:
     eTrackingState mLastProcessedState;
 
     // Input sensor
-    // int mSensor;
+    int mSensor;
 
     // Current Frame
     Frame mCurrentFrame;
@@ -158,7 +158,7 @@ public:
     bool mbStep;
 
     // // True if local mapping is deactivated and we are performing only localization
-    // bool mbOnlyTracking;
+    bool mbOnlyTracking;
 
     // void Reset(bool bLocMap = false);
     // void ResetActiveMap(bool bLocMap = false);
@@ -194,10 +194,10 @@ public:
 protected:
 
     // Main tracking function. It is independent of the input sensor.
-    // void Track();
+    void Track();
 
-    // // Map initialization for stereo and RGB-D
-    // void StereoInitialization();
+    // Map initialization for stereo and RGB-D
+    void StereoInitialization();
 
     // // Map initialization for monocular
     // void MonocularInitialization();
@@ -315,8 +315,8 @@ protected:
     // bool mbVelocity{false};
     // Sophus::SE3f mVelocity;
 
-    // //Color order (true RGB, false BGR, ignored if grayscale)
-    // bool mbRGB;
+    //Color order (true RGB, false BGR, ignored if grayscale)
+    bool mbRGB;
 
     // list<MapPoint*> mlpTemporalPoints;
 

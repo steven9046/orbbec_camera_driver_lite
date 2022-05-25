@@ -31,13 +31,13 @@
 // #include "ORBVocabulary.h"
 
 // #include "Converter.h"
-// #include "Settings.h"
+#include "Settings.h"
 
 #include <mutex>
 #include <opencv4/opencv2/opencv.hpp>
 #include "Eigen/Core"
 #include "ORBextractor.h"
-// #include "sophus/se3.hpp"
+#include "sophus/se3.hpp"
 
 using namespace std;
 
@@ -62,7 +62,7 @@ public:
    
     // Constructor for RGB-D cameras.
     // Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, ORBextractor* extractor, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera,Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
-    Frame(const cv::Mat &imGray, const cv::Mat &imDepth, ORBextractor* extractor, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth); //, Frame* pPrevF = static_cast<Frame*>(NULL)
+    Frame(const cv::Mat &imGray, const cv::Mat &imDepth, ORBextractor* extractor, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera); //, Frame* pPrevF = static_cast<Frame*>(NULL)
 
     // Destructor
     // ~Frame();
@@ -74,7 +74,7 @@ public:
     // void ComputeBoW();
 
     // Set the camera pose. (Imu pose is not modified!)
-    // void SetPose(const Sophus::SE3<float> &Tcw);
+    void SetPose(const Sophus::SE3<float> &Tcw);
 
     // Set IMU velocity
     // void SetVelocity(Eigen::Vector3f Vw);
@@ -126,7 +126,7 @@ public:
     // bool isSet() const;
 
     // Computes rotation, translation and camera center matrices from the camera pose.
-    // void UpdatePoseMatrices();
+    void UpdatePoseMatrices();
 
     // // Returns the camera center.
     // inline Eigen::Vector3f GetCameraCenter(){
@@ -162,13 +162,13 @@ public:
 
 
 private:
-    // //Sophus/Eigen migration
-    // Sophus::SE3<float> mTcw;
-    // Eigen::Matrix<float,3,3> mRwc;
-    // Eigen::Matrix<float,3,1> mOw;
-    // Eigen::Matrix<float,3,3> mRcw;
-    // Eigen::Matrix<float,3,1> mtcw;
-    // bool mbHasPose;
+    //Sophus/Eigen migration
+    Sophus::SE3<float> mTcw;
+    Eigen::Matrix<float,3,3> mRwc;
+    Eigen::Matrix<float,3,1> mOw;
+    Eigen::Matrix<float,3,3> mRcw;
+    Eigen::Matrix<float,3,1> mtcw;
+    bool mbHasPose;
 
     //Rcw_ not necessary as Sophus has a method for extracting the rotation matrix: Tcw_.rotationMatrix()
     //tcw_ not necessary as Sophus has a method for extracting the translation vector: Tcw_.translation()
@@ -322,7 +322,7 @@ private:
     // std::mutex *mpMutexImu;
 
 public:
-    // GeometricCamera* mpCamera, *mpCamera2;
+    GeometricCamera* mpCamera, *mpCamera2;
 
     //Number of KeyPoints extracted in the left and right images
     // int Nleft;

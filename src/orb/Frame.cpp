@@ -97,6 +97,7 @@ Frame::Frame(const Frame &frame)
  * @param [in]  distCoef    畸变参数
  * @param [in]  bf          基线 * fx
  * @param [in]  thDepth     判断一个点是远还是近的阈值
+ * @param [in]  pCamera     几何相机
  * @param [in]  pPrevF      前一帧
  * 1. 记录 Frame ID
  * 2. 提取ORB特征放入 mDescriptors
@@ -104,10 +105,11 @@ Frame::Frame(const Frame &frame)
  * 4. 特征点反投影到相机坐标系，生成地图点
  * 4. 把特征分配到Grid里,加速帧间特征匹配
  */
-Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, ORBextractor* extractor, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth)
+Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, ORBextractor* extractor, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera)
     :mpORBextractorLeft(extractor),
      mK(K.clone()),/* mK_(Converter::toMatrix3f(K)),*/mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
-    mbIsSet(false)
+     mpCamera(pCamera),
+     mbIsSet(false)
 {
     // Frame ID
     mnId=nNextId++;
@@ -252,13 +254,13 @@ void Frame::ExtractORB(int flag, const cv::Mat &im, const int x0, const int x1)
 //     return mbIsSet;
 // }
 
-// void Frame::SetPose(const Sophus::SE3<float> &Tcw) {
-//     mTcw = Tcw;
+void Frame::SetPose(const Sophus::SE3<float> &Tcw) {
+    mTcw = Tcw;
 
-//     UpdatePoseMatrices();
-//     mbIsSet = true;
-//     mbHasPose = true;
-// }
+    UpdatePoseMatrices();
+    mbIsSet = true;
+    mbHasPose = true;
+}
 
 // void Frame::SetNewBias(const IMU::Bias &b)
 // {
@@ -293,14 +295,14 @@ void Frame::ExtractORB(int flag, const cv::Mat &im, const int x0, const int x1)
 //     mbHasPose = true;
 // }
 
-// void Frame::UpdatePoseMatrices()
-// {
-//     Sophus::SE3<float> Twc = mTcw.inverse();
-//     mRwc = Twc.rotationMatrix();
-//     mOw = Twc.translation();
-//     mRcw = mTcw.rotationMatrix();
-//     mtcw = mTcw.translation();
-// }
+void Frame::UpdatePoseMatrices()
+{
+    Sophus::SE3<float> Twc = mTcw.inverse();
+    mRwc = Twc.rotationMatrix();
+    mOw = Twc.translation();
+    mRcw = mTcw.rotationMatrix();
+    mtcw = mTcw.translation();
+}
 
 // Eigen::Matrix<float,3,1> Frame::GetImuPosition() const {
 //     return mRwc * mImuCalib.mTcb.translation() + mOw;

@@ -76,3 +76,14 @@ v1.2.2 @2022.5.25
     3.畸变系数为什么不放在 GeometricCamera 里呢？
 2. 激活 Tracking 里的 GeometricCamera 相关数据
     只是在 newParameterLoader 里进行了初始化
+3. 激活 Frame 里的几何相机, 位姿相关数据结构(sophus)
+4. 激活 tracking 的主函数 GrabImageRGBD
+    a. depth 图像在传进来之前就转好格式了，在 oni_camera 里完成的
+5. 激活 track() 函数,完成倒帧结构 (currentFrame, lastFrame)
+    a. mState==NO_IMAGES_YET
+    b. mState==NOT_INITIALIZED
+        进行初始化
+    c. mState==INITIALIZED
+        进行追踪(先为空)
+6. 取消点云显示
+7. 显示当前帧的去畸变关键点 mvKeysUn
