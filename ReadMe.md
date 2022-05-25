@@ -40,7 +40,7 @@ git clone https://github.com/sunforever1990/orbbec_camera_driver.git
     * This is used for visualization. You can install it from [Pangoliln](https://github.com/stevenlovegrove/Pangolin/tree/v0.6)
 
 * Eigen
-    * This is required by g2o (see below). Download and install instructions can be found at: http://eigen.tuxfamily.org.**Required at least 3.1.0**.
+    * This is required by g2o (see below). Download and install instructions can be found at: http://eigen.tuxfamily.org. **Required at least 3.1.0**.
 
 ## Building ##
 
