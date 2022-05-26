@@ -91,3 +91,13 @@
 * 6. 取消点云显示
 * 7. 显示当前帧的去畸变关键点 mvKeysUn
 
+## v1.2.3 @2022.5.26 ##
+* 1. 添加MapPoint
+    * a. 只保留 世界位姿 和 描述子 数据，其他注释掉
+    * b. 只保留构一个从3D位姿的造函数
+    * c. 需要Frame的位姿，这里先把Frame的位姿都设置为(0,0,0)
+         Frame的位姿是在track()里进行设置的，初始为0，如果进行了特征匹配则是优化得到的值
+* 2. 激活TrackWithMotionModel 
+    * a. 修复了Frame拷贝构造函数里没有复制 pCamera , mvpMapPoints 的bug
+    * b. 因为流程不同，我们这里 UpdateLastFrame 里其实是给 currentFrame 生成地图点
+    * c. 激活viewer线程，显示地图点

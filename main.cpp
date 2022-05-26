@@ -78,13 +78,14 @@ int main(int argc, char** argv) {
   oni_camera.seOnitLDP(false);
   oni_camera.getCameraParams();
 
-  // #ifdef LINUX_X86
-  //   // Viewer for point cloud
-  //   viewer::Viewer main_viewer(480, 640, "pcl");
-  //   main_viewer.setInputCloud(oni_camera.point_cloud_);
-  //   std::thread display_loop;
-  //   display_loop = std::thread(&viewer::Viewer::run, &main_viewer);
-  // #endif
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr mapPoints = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
+  #ifdef LINUX_X86
+    // Viewer for point cloud
+    viewer::Viewer main_viewer(480, 640, "pcl");
+    main_viewer.setInputCloud(mapPoints);
+    std::thread display_loop;
+    display_loop = std::thread(&viewer::Viewer::run, &main_viewer);
+  #endif
 
   // /* Initialize image processor library */
   // ImageProcessor::InputParam input_param = {WORK_DIR, 4};
@@ -164,13 +165,45 @@ int main(int argc, char** argv) {
       // 测试函数
       // 这里执行 tracker 的 Grabimage
       tracker.GrabImageRGBD(rgb_img, imDepth);
-      std::cout <<  tracker.mCurrentFrame.mvKeysUn.size() << std::endl;
+      // std::cout <<  tracker.mLastFrame.GetCameraCenter() << std::endl;
+      // std::cout <<  tracker.mLastFrame.mvKeysUn.size() << std::endl;
       const auto& end_time = std::chrono::steady_clock::now();
       double time_image_process = (end_time - start_time).count() / 1000000.0;
       // 把keypoint画出来
-      for (int i = 0; i < tracker.mCurrentFrame.mvKeysUn.size(); i++) {
-        cv::circle(image_for_show, cv::Point(tracker.mCurrentFrame.mvKeysUn[i].pt.x, tracker.mCurrentFrame.mvKeysUn[i].pt.y), 3, CV_RGB(0, 255, 0), 1);
+      for (int i = 0; i < tracker.mLastFrame.mvKeysUn.size(); i++) {
+        cv::circle(image_for_show, cv::Point(tracker.mLastFrame.mvKeysUn[i].pt.x, tracker.mLastFrame.mvKeysUn[i].pt.y), 3, CV_RGB(0, 255, 0), 1);
       }
+      // 地图点画出来
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr tmp_mapPoints = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
+      static int seq = 0;
+      // clear and set point cloud
+      mapPoints->clear();
+      mapPoints->header.frame_id = "/base_link";
+      mapPoints->is_dense = false;
+      // mapPoints->header.stamp = ros::Time::now().toSec();
+      mapPoints->header.seq = seq++;
+      pcl::PointXYZRGB point;
+      int invalid_close_pixels_count = 0;
+      int valid_points_counter = 0;
+      pcl::PointXYZRGB invalid_point;
+      invalid_point.x = invalid_point.y = invalid_point.z = std::numeric_limits<float>::quiet_NaN();
+      invalid_point.r = invalid_point.g = invalid_point.b = 0;  // black
+      std::cout <<  tracker.mLastFrame.mvpMapPoints.size()<< std::endl;
+      for(int i = 0; i < tracker.mLastFrame.mvpMapPoints.size(); i++){
+        ORB_SLAM3::MapPoint* p = tracker.mLastFrame.mvpMapPoints[i];
+        if(p){
+          Eigen::Vector3f pos = p->GetWorldPos();
+          point.x = pos(0) * 0.001 ;
+          point.y = pos(1) * 0.001 ;
+          point.z = pos(2) * 0.001 ;
+          // std::cout << point.x << " "<< point.y << " " << point.z << std::endl;
+          point.r = 255;
+          point.g = 255;
+          point.b = 255;
+          mapPoints->points.emplace_back(point);
+        }
+      }
+      std::cout << "points : " <<  mapPoints->points.size() << std::endl;
       cv::imshow("rgb_img", image_for_show);
       cv::waitKey(1);
     }

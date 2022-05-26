@@ -65,6 +65,7 @@ add_executable(orbbec_camera_driver
                 src/viewer.cpp
                 src/frame.cpp
                 src/orb/ORBextractor.cpp
+                src/orb/MapPoint.cpp
                 src/orb/Frame.cpp
                 src/orb/Tracking.cpp
                 src/orb/Settings.cpp

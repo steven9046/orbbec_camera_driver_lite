@@ -40,6 +40,7 @@
 
 #include "CameraModels/GeometricCamera.h"
 
+#include "MapPoint.h"
 #include <mutex>
 #include <unordered_set>
 
@@ -206,8 +207,8 @@ protected:
 
     // void CheckReplacedInLastFrame();
     // bool TrackReferenceKeyFrame();
-    // void UpdateLastFrame();
-    // bool TrackWithMotionModel();
+    void UpdateLastFrame();
+    bool TrackWithMotionModel();
     // bool PredictStateIMU();
 
     // bool Relocalization();

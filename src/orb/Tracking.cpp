@@ -57,7 +57,8 @@ Tracking::Tracking(Settings* settings):
     bStepByStep(false), 
     mnInitialFrameId(0), 
     mnFirstFrameId(0),
-    mbOnlyTracking(false)
+    mbOnlyTracking(false),
+    mpCamera2(nullptr)
 {
     // 1. 加载配置文件
     // Load camera parameters from settings file
@@ -1791,7 +1792,7 @@ void Tracking::Track()
     {
         mState = NOT_INITIALIZED;
     }
-
+    // std::cout << "mstate: " << mState <<std::endl;
     mLastProcessedState=mState;
 
 //     // 带IMU的传感器要进行预积分
@@ -1829,7 +1830,14 @@ void Tracking::Track()
     {
 
         StereoInitialization();
-
+        // std::cout << "size  : " << mLastFrame.mvpMapPoints.size() << std::endl;
+        // for(int i = 0; i < mLastFrame.mvpMapPoints.size(); i++){
+        //     ORB_SLAM3::MapPoint* p = mLastFrame.mvpMapPoints[i];
+        //     if(p){
+        //         auto pos = p->mnId;
+        //         std::cout << pos << std::endl;
+        //     }
+        // }
         //mpFrameDrawer->Update(this);
 
         if(mState!=OK) // If rightly initialized, mState=OK
@@ -1844,356 +1852,16 @@ void Tracking::Track()
     }
     else
     {
+        std::cout << "tracking ..." << std::endl;
         // System is initialized. Track Frame.
         bool bOK;
-
-
-
-        // // 使用运动模型初始化相机位姿(优化的起点)
-        // // Initial camera pose estimation using motion model or relocalization (if tracking is lost)
-        // if(!mbOnlyTracking)
-        // {
-
-        //     // State OK
-        //     // Local Mapping is activated. This is the normal behaviour, unless
-        //     // you explicitly activate the "only tracking" mode.
-        //     if(mState==OK)
-        //     {
-
-        //         // Local Mapping might have changed some MapPoints tracked in last frame
-        //         CheckReplacedInLastFrame();
-
-        //         if((!mbVelocity && !pCurrentMap->isImuInitialized()) || mCurrentFrame.mnId<mnLastRelocFrameId+2)
-        //         {
-        //             Verbose::PrintMess("TRACK: Track with respect to the reference KF ", Verbose::VERBOSITY_DEBUG);
-        //             bOK = TrackReferenceKeyFrame();
-        //         }
-        //         else // 通过运动模型进行初始化
-        //         {
-        //             Verbose::PrintMess("TRACK: Track with motion model", Verbose::VERBOSITY_DEBUG);
-        //             bOK = TrackWithMotionModel();
-        //             if(!bOK) // 如果运动模型失效，则使用关键帧进行追踪
-        //                 bOK = TrackReferenceKeyFrame();
-        //         }
-
-
-        //         if (!bOK)
-        //         {
-        //             if ( mCurrentFrame.mnId<=(mnLastRelocFrameId+mnFramesToResetIMU) &&
-        //                  (mSensor==System::IMU_MONOCULAR || mSensor==System::IMU_STEREO || mSensor == System::IMU_RGBD))
-        //             {
-        //                 mState = LOST;
-        //             }
-        //             else if(pCurrentMap->KeyFramesInMap()>10)
-        //             {
-        //                 // cout << "KF in map: " << pCurrentMap->KeyFramesInMap() << endl;
-        //                 mState = RECENTLY_LOST;
-        //                 mTimeStampLost = mCurrentFrame.mTimeStamp;
-        //             }
-        //             else
-        //             {
-        //                 mState = LOST;
-        //             }
-        //         }
-        //     }
-        //     else
-        //     {
-
-        //         if (mState == RECENTLY_LOST)
-        //         {
-        //             Verbose::PrintMess("Lost for a short time", Verbose::VERBOSITY_NORMAL);
-
-        //             bOK = true;
-        //             if((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))
-        //             {
-        //                 if(pCurrentMap->isImuInitialized())
-        //                     PredictStateIMU();
-        //                 else
-        //                     bOK = false;
-
-        //                 if (mCurrentFrame.mTimeStamp-mTimeStampLost>time_recently_lost)
-        //                 {
-        //                     mState = LOST;
-        //                     Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
-        //                     bOK=false;
-        //                 }
-        //             }
-        //             else
-        //             {
-        //                 // Relocalization
-        //                 bOK = Relocalization();
-        //                 //std::cout << "mCurrentFrame.mTimeStamp:" << to_string(mCurrentFrame.mTimeStamp) << std::endl;
-        //                 //std::cout << "mTimeStampLost:" << to_string(mTimeStampLost) << std::endl;
-        //                 if(mCurrentFrame.mTimeStamp-mTimeStampLost>3.0f && !bOK)
-        //                 {
-        //                     mState = LOST;
-        //                     Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
-        //                     bOK=false;
-        //                 }
-        //             }
-        //         }
-        //         else if (mState == LOST)
-        //         {
-
-        //             Verbose::PrintMess("A new map is started...", Verbose::VERBOSITY_NORMAL);
-
-        //             if (pCurrentMap->KeyFramesInMap()<10)
-        //             {
-        //                 mpSystem->ResetActiveMap();
-        //                 Verbose::PrintMess("Reseting current map...", Verbose::VERBOSITY_NORMAL);
-        //             }else
-        //                 CreateMapInAtlas();
-
-        //             if(mpLastKeyFrame)
-        //                 mpLastKeyFrame = static_cast<KeyFrame*>(NULL);
-
-        //             Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
-
-        //             return;
-        //         }
-        //     }
-
-        // }
-        // else
-        // {
-        //     // Localization Mode: Local Mapping is deactivated (TODO Not available in inertial mode)
-        //     if(mState==LOST)
-        //     {
-        //         if(mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
-        //             Verbose::PrintMess("IMU. State LOST", Verbose::VERBOSITY_NORMAL);
-        //         bOK = Relocalization();
-        //     }
-        //     else
-        //     {
-        //         if(!mbVO)
-        //         {
-        //             // In last frame we tracked enough MapPoints in the map
-        //             if(mbVelocity)
-        //             {
-        //                 bOK = TrackWithMotionModel();
-        //             }
-        //             else
-        //             {
-        //                 bOK = TrackReferenceKeyFrame();
-        //             }
-        //         }
-        //         else
-        //         {
-        //             // In last frame we tracked mainly "visual odometry" points.
-
-        //             // We compute two camera poses, one from motion model and one doing relocalization.
-        //             // If relocalization is sucessfull we choose that solution, otherwise we retain
-        //             // the "visual odometry" solution.
-
-        //             bool bOKMM = false;
-        //             bool bOKReloc = false;
-        //             vector<MapPoint*> vpMPsMM;
-        //             vector<bool> vbOutMM;
-        //             Sophus::SE3f TcwMM;
-        //             if(mbVelocity)
-        //             {
-        //                 bOKMM = TrackWithMotionModel();
-        //                 vpMPsMM = mCurrentFrame.mvpMapPoints;
-        //                 vbOutMM = mCurrentFrame.mvbOutlier;
-        //                 TcwMM = mCurrentFrame.GetPose();
-        //             }
-        //             bOKReloc = Relocalization();
-
-        //             if(bOKMM && !bOKReloc)
-        //             {
-        //                 mCurrentFrame.SetPose(TcwMM);
-        //                 mCurrentFrame.mvpMapPoints = vpMPsMM;
-        //                 mCurrentFrame.mvbOutlier = vbOutMM;
-
-        //                 if(mbVO)
-        //                 {
-        //                     for(int i =0; i<mCurrentFrame.N; i++)
-        //                     {
-        //                         if(mCurrentFrame.mvpMapPoints[i] && !mCurrentFrame.mvbOutlier[i])
-        //                         {
-        //                             mCurrentFrame.mvpMapPoints[i]->IncreaseFound();
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //             else if(bOKReloc)
-        //             {
-        //                 mbVO = false;
-        //             }
-
-        //             bOK = bOKReloc || bOKMM;
-        //         }
-        //     }
-        // }
-
-        // if(!mCurrentFrame.mpReferenceKF)
-        //     mCurrentFrame.mpReferenceKF = mpReferenceKF;
-
-
-
-
-
-        // // If we have an initial estimation of the camera pose and matching. Track the local map.
-        // if(!mbOnlyTracking)
-        // {
-        //     if(bOK)
-        //     {
-        //         bOK = TrackLocalMap();
-
-        //     }
-        //     if(!bOK)
-        //         cout << "Fail to track local map!" << endl;
-        // }
-        // else
-        // {
-        //     // mbVO true means that there are few matches to MapPoints in the map. We cannot retrieve
-        //     // a local map and therefore we do not perform TrackLocalMap(). Once the system relocalizes
-        //     // the camera we will use the local map again.
-        //     if(bOK && !mbVO)
-        //         bOK = TrackLocalMap();
-        // }
-
-        // if(bOK)
-        //     mState = OK;
-        // else if (mState == OK)
-        // {
-        //     if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
-        //     {
-        //         Verbose::PrintMess("Track lost for less than one second...", Verbose::VERBOSITY_NORMAL);
-        //         if(!pCurrentMap->isImuInitialized() || !pCurrentMap->GetIniertialBA2())
-        //         {
-        //             cout << "IMU is not or recently initialized. Reseting active map..." << endl;
-        //             mpSystem->ResetActiveMap();
-        //         }
-
-        //         mState=RECENTLY_LOST;
-        //     }
-        //     else
-        //         mState=RECENTLY_LOST; // visual to lost
-
-        //     /*if(mCurrentFrame.mnId>mnLastRelocFrameId+mMaxFrames)
-        //     {*/
-        //         mTimeStampLost = mCurrentFrame.mTimeStamp;
-        //     //}
-        // }
-
-        // // Save frame if recent relocalization, since they are used for IMU reset (as we are making copy, it shluld be once mCurrFrame is completely modified)
-        // if((mCurrentFrame.mnId<(mnLastRelocFrameId+mnFramesToResetIMU)) && (mCurrentFrame.mnId > mnFramesToResetIMU) &&
-        //    (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) && pCurrentMap->isImuInitialized())
-        // {
-        //     // TODO check this situation
-        //     Verbose::PrintMess("Saving pointer to frame. imu needs reset...", Verbose::VERBOSITY_NORMAL);
-        //     Frame* pF = new Frame(mCurrentFrame);
-        //     pF->mpPrevFrame = new Frame(mLastFrame);
-
-        //     // Load preintegration
-        //     pF->mpImuPreintegratedFrame = new IMU::Preintegrated(mCurrentFrame.mpImuPreintegratedFrame);
-        // }
-
-        // if(pCurrentMap->isImuInitialized())
-        // {
-        //     if(bOK)
-        //     {
-        //         if(mCurrentFrame.mnId==(mnLastRelocFrameId+mnFramesToResetIMU))
-        //         {
-        //             cout << "RESETING FRAME!!!" << endl;
-        //             ResetFrameIMU();
-        //         }
-        //         else if(mCurrentFrame.mnId>(mnLastRelocFrameId+30))
-        //             mLastBias = mCurrentFrame.mImuBias;
-        //     }
-        // }
-
-
-
-        // // Update drawer
-        // mpFrameDrawer->Update(this);
-        // if(mCurrentFrame.isSet())
-        //     mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.GetPose());
-
-        // if(bOK || mState==RECENTLY_LOST)
-        // {
-        //     // Update motion model
-        //     if(mLastFrame.isSet() && mCurrentFrame.isSet())
-        //     {
-        //         Sophus::SE3f LastTwc = mLastFrame.GetPose().inverse();
-        //         mVelocity = mCurrentFrame.GetPose() * LastTwc;
-        //         mbVelocity = true;
-        //     }
-        //     else {
-        //         mbVelocity = false;
-        //     }
-
-        //     if(mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
-        //         mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.GetPose());
-
-        //     // Clean VO matches
-        //     for(int i=0; i<mCurrentFrame.N; i++)
-        //     {
-        //         MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
-        //         if(pMP)
-        //             if(pMP->Observations()<1)
-        //             {
-        //                 mCurrentFrame.mvbOutlier[i] = false; // 如果没有被观测到这里就是false
-        //                 mCurrentFrame.mvpMapPoints[i]=static_cast<MapPoint*>(NULL);
-        //             }
-        //     }
-
-        //     // Delete temporal MapPoints
-        //     for(list<MapPoint*>::iterator lit = mlpTemporalPoints.begin(), lend =  mlpTemporalPoints.end(); lit!=lend; lit++)
-        //     {
-        //         MapPoint* pMP = *lit;
-        //         delete pMP;
-        //     }
-        //     mlpTemporalPoints.clear();
-
-
-        //     bool bNeedKF = NeedNewKeyFrame();
-
-        //     // Check if we need to insert a new keyframe
-        //     // if(bNeedKF && bOK)
-        //     if(bNeedKF && (bOK || (mInsertKFsLost && mState==RECENTLY_LOST &&
-        //                            (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))))
-        //         CreateNewKeyFrame();
-
-
-
-        //     // We allow points with high innovation (considererd outliers by the Huber Function)
-        //     // pass to the new keyframe, so that bundle adjustment will finally decide
-        //     // if they are outliers or not. We don't want next frame to estimate its position
-        //     // with those points so we discard them in the frame. Only has effect if lastframe is tracked
-        //     for(int i=0; i<mCurrentFrame.N;i++)
-        //     {
-        //         if(mCurrentFrame.mvpMapPoints[i] && mCurrentFrame.mvbOutlier[i])
-        //             mCurrentFrame.mvpMapPoints[i]=static_cast<MapPoint*>(NULL);
-        //     }
-        // }
-
-        // // Reset if the camera get lost soon after initialization
-        // if(mState==LOST)
-        // {
-        //     if(pCurrentMap->KeyFramesInMap()<=10)
-        //     {
-        //         mpSystem->ResetActiveMap();
-        //         return;
-        //     }
-        //     if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
-        //         if (!pCurrentMap->isImuInitialized())
-        //         {
-        //             Verbose::PrintMess("Track lost before IMU initialisation, reseting...", Verbose::VERBOSITY_QUIET);
-        //             mpSystem->ResetActiveMap();
-        //             return;
-        //         }
-
-        //     CreateMapInAtlas();
-
-        //     return;
-        // }
-
-        // if(!mCurrentFrame.mpReferenceKF)
-        //     mCurrentFrame.mpReferenceKF = mpReferenceKF;
+        if(mState==OK){
+            bOK = TrackWithMotionModel();
+        }
+        
 
         mLastFrame = Frame(mCurrentFrame);
+
     }
 }
 
@@ -2205,8 +1873,10 @@ void Tracking::Track()
  */
 void Tracking::StereoInitialization()
 {
+    std::cout << "StereoInitialization:  " << mCurrentFrame.N << std::endl;
     if(mCurrentFrame.N>500)
     {
+        std::cout << "StereoInitializing..." << std::endl;
         // if (mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
         // {
         //     if (!mCurrentFrame.mpImuPreintegrated || !mLastFrame.mpImuPreintegrated)
@@ -2246,26 +1916,31 @@ void Tracking::StereoInitialization()
         // // Insert KeyFrame in the map
         // mpAtlas->AddKeyFrame(pKFini);
 
-        // // Create MapPoints and asscoiate to KeyFrame
-        // if(!mpCamera2){ // RGBD相机
-        //     for(int i=0; i<mCurrentFrame.N;i++)
-        //     {
-        //         float z = mCurrentFrame.mvDepth[i];
-        //         if(z>0)
-        //         {
-        //             Eigen::Vector3f x3D;
-        //             mCurrentFrame.UnprojectStereo(i, x3D);
-        //             MapPoint* pNewMP = new MapPoint(x3D, pKFini, mpAtlas->GetCurrentMap());
-        //             pNewMP->AddObservation(pKFini,i);
-        //             pKFini->AddMapPoint(pNewMP,i);
-        //             pNewMP->ComputeDistinctiveDescriptors();
-        //             pNewMP->UpdateNormalAndDepth();
-        //             mpAtlas->AddMapPoint(pNewMP);
-
-        //             mCurrentFrame.mvpMapPoints[i]=pNewMP;
-        //         }
-        //     }
-        // } 
+        // Create MapPoints and asscoiate to KeyFrame
+        if(!mpCamera2){ // RGBD相机
+            for(int i=0; i<mCurrentFrame.N;i++)
+            {
+                float z = mCurrentFrame.mvDepth[i];
+                if(z>0)
+                {
+                    Eigen::Vector3f x3D;
+                    mCurrentFrame.UnprojectStereo(i, x3D);
+                    // 这里是通过关键帧生成的地图点
+                    // MapPoint* pNewMP = new MapPoint(x3D, pKFini, mpAtlas->GetCurrentMap());
+                    // pNewMP->AddObservation(pKFini,i);
+                    // pKFini->AddMapPoint(pNewMP,i);
+                    // pNewMP->ComputeDistinctiveDescriptors();
+                    // pNewMP->UpdateNormalAndDepth();
+                    // mpAtlas->AddMapPoint(pNewMP);
+                    // 改成通过帧生成地图点
+                    MapPoint* pNewMP = new MapPoint(x3D, &mCurrentFrame, i);
+                    mCurrentFrame.mvpMapPoints[i]=pNewMP;
+                    // std::cout << "pos ..." << std::endl;
+                    // Eigen::Vector3f pos = pNewMP->GetWorldPos();
+                    // std::cout <<  pos(0) << std::endl;
+                }
+            }
+        } 
         // else{ // 双目相机
         //     for(int i = 0; i < mCurrentFrame.Nleft; i++){
         //         int rightIndex = mCurrentFrame.mvLeftToRightMatch[i];
@@ -2314,6 +1989,7 @@ void Tracking::StereoInitialization()
 
         mState=OK;
     }
+    
 }
 
 
@@ -2650,199 +2326,205 @@ void Tracking::StereoInitialization()
 //         return nmatchesMap>=10;
 // }
 
-// /**
-//  * @brief 更新上一帧的相关信息
-//  * 1. 位姿 Pose
-//  * 2. 特征点
-//  */
-// void Tracking::UpdateLastFrame()
-// {
-//     // Update pose according to reference keyframe
-//     KeyFrame* pRef = mLastFrame.mpReferenceKF;
-//     // 当前帧到参考关键帧的transform
-//     Sophus::SE3f Tlr = mlRelativeFramePoses.back();
-//     // 上一帧的Pose Tc1c0 * Tc0w = Tc1w
-//     mLastFrame.SetPose(Tlr * pRef->GetPose());
+/**
+ * @brief 更新上一帧的相关信息,我们这里给上一帧生成地图点
+ * 1. 位姿 Pose
+ * 2. 特征点
+ */
+void Tracking::UpdateLastFrame()
+{
+    // // Update pose according to reference keyframe
+    // KeyFrame* pRef = mLastFrame.mpReferenceKF;
+    // // 当前帧到参考关键帧的transform
+    // Sophus::SE3f Tlr = mlRelativeFramePoses.back();
+    // // 上一帧的Pose Tc1c0 * Tc0w = Tc1w
+    // mLastFrame.SetPose(Tlr * pRef->GetPose());
     
-//     if(mnLastKeyFrameId==mLastFrame.mnId || mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR || !mbOnlyTracking)
-//         return;
+    // if(mnLastKeyFrameId==mLastFrame.mnId || mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR || !mbOnlyTracking)
+    //     return;
 
-//     // Create "visual odometry" MapPoints
-//     // We sort points according to their measured depth by the stereo/RGB-D sensor
-//     //         深度值 特征点id
-//     vector<pair<float,int> > vDepthIdx;
-//     // 左目相机提取出的特征点数量
-//     const int Nfeat = mLastFrame.Nleft == -1? mLastFrame.N : mLastFrame.Nleft;
-//     vDepthIdx.reserve(Nfeat);
-//     for(int i=0; i<Nfeat;i++)
-//     {
-//         float z = mLastFrame.mvDepth[i];
-//         if(z>0)
-//         {
-//             vDepthIdx.push_back(make_pair(z,i));
-//         }
-//     }
+    // Create "visual odometry" MapPoints
+    // We sort points according to their measured depth by the stereo/RGB-D sensor
+    //         深度值 特征点id
+    vector<pair<float,int> > vDepthIdx;
+    // 左目相机提取出的特征点数量
+    const int Nfeat = mCurrentFrame.N;
+    vDepthIdx.reserve(Nfeat);
+    for(int i=0; i<Nfeat;i++)
+    {
+        float z = mCurrentFrame.mvDepth[i];
+        if(z>0)
+        {
+            vDepthIdx.push_back(make_pair(z,i));
+        }
+    }
 
-//     if(vDepthIdx.empty())
-//         return;
+    if(vDepthIdx.empty())
+        return;
 
-//     // 按照深度值排序
-//     sort(vDepthIdx.begin(),vDepthIdx.end());
+    // 按照深度值排序
+    sort(vDepthIdx.begin(),vDepthIdx.end());
 
-//     // 找到100个比较近的特征点
-//     // We insert all close points (depth<mThDepth)
-//     // If less than 100 close points, we insert the 100 closest ones.
-//     int nPoints = 0;
-//     for(size_t j=0; j<vDepthIdx.size();j++)
-//     {
-//         int i = vDepthIdx[j].second;
+    // 找到100个比较近的特征点
+    // We insert all close points (depth<mThDepth)
+    // If less than 100 close points, we insert the 100 closest ones.
+    int nPoints = 0;
+    for(size_t j=0; j<vDepthIdx.size();j++)
+    {
+        int i = vDepthIdx[j].second;
 
-//         bool bCreateNew = false;
+        bool bCreateNew = false;
 
-//         MapPoint* pMP = mLastFrame.mvpMapPoints[i];
+        // MapPoint* pMP = mLastFrame.mvpMapPoints[i];
 
-//         if(!pMP)
-//             bCreateNew = true;
-//         else if(pMP->Observations()<1)
-//             bCreateNew = true;
+        // if(!pMP)
+            bCreateNew = true;
+        // else if(pMP->Observations()<1)
+        //     bCreateNew = true;
 
-//         // 是否要创建新的MapPoint
-//         if(bCreateNew)
-//         {
-//             Eigen::Vector3f x3D;
-//             if(mLastFrame.Nleft == -1){
-//                 mLastFrame.UnprojectStereo(i, x3D);
-//             }
-//             else{
-//                 x3D = mLastFrame.UnprojectStereoFishEye(i);
-//             }
-//             // x3D设置为worldpos
-//             MapPoint* pNewMP = new MapPoint(x3D,mpAtlas->GetCurrentMap(),&mLastFrame,i);
-//             mLastFrame.mvpMapPoints[i]=pNewMP;
+        // 是否要创建新的MapPoint
+        if(bCreateNew)
+        {
+            Eigen::Vector3f x3D;
+            // if(mLastFrame.Nleft == -1){
+                mCurrentFrame.UnprojectStereo(i, x3D);
+            // }
+            // else{
+            //     x3D = mLastFrame.UnprojectStereoFishEye(i);
+            // }
+            // x3D设置为worldpos
+            MapPoint* pNewMP = new MapPoint(x3D,&mCurrentFrame,i);
+            mCurrentFrame.mvpMapPoints[i]=pNewMP;
+            std::cout << "pos ..." << std::endl;
+            // Eigen::Vector3f pos = pNewMP->GetWorldPos();
+            // std::cout <<  pos(0) << std::endl;
 
-//             mlpTemporalPoints.push_back(pNewMP);
-//             nPoints++;
-//         }
-//         else
-//         {
-//             nPoints++;
-//         }
-//         // 终止条件
-//         if(vDepthIdx[j].first>mThDepth && nPoints>100)
-//             break;
+            // mlpTemporalPoints.push_back(pNewMP);
+            nPoints++;
+        }
+        else
+        {
+            nPoints++;
+        }
+        // 终止条件
+        if(vDepthIdx[j].first>mThDepth && nPoints>100)
+            break;
 
-//     }
-// }
+    }
+}
 
-// /**
-//  * @brief 
-//  * 1. 更新上一帧信息(补充地图点)
-//  * 2. 设置当前帧位姿(恒速模型)
-//  * 3. 特征点匹配(通过重投影缩小匹配范围，快速找到匹配特征点对)
-//  * 4. 位置优化(通过上一步匹配得到匹配成功的地图点，该地图点在当前帧里有对应的特征点像素坐标，该地图点重投影也可以得到一个像素坐标，这两个像素坐标之间的距离就是误差)
-//  *    优化图: 
-//  *          顶点为相机位姿SE3
-//  *          误差边为上边求得的那个冲投影误差
-//  *    (相当于根据匹配到的特征点调整相机位姿)
-//  * PS: 1. 之后当前帧里的地图点只有上一帧投影过来，并且成功匹配的
-//  */
-// bool Tracking::TrackWithMotionModel()
-// {
-//     ORBmatcher matcher(0.9,true);
+/**
+ * @brief 
+ * 1. 更新上一帧信息(补充地图点)
+ * 2. 设置当前帧位姿(恒速模型)
+ * 3. 特征点匹配(通过重投影缩小匹配范围，快速找到匹配特征点对)
+ * 4. 位置优化(通过上一步匹配得到匹配成功的地图点，该地图点在当前帧里有对应的特征点像素坐标，该地图点重投影也可以得到一个像素坐标，这两个像素坐标之间的距离就是误差)
+ *    优化图: 
+ *          顶点为相机位姿SE3
+ *          误差边为上边求得的那个冲投影误差
+ *    (相当于根据匹配到的特征点调整相机位姿)
+ * PS: 1. 之后当前帧里的地图点只有上一帧投影过来，并且成功匹配的
+ */
+bool Tracking::TrackWithMotionModel()
+{
+    // ORBmatcher matcher(0.9,true);
 
-//     // Update last frame pose according to its reference keyframe
-//     // Create "visual odometry" points if in Localization Mode
-//     UpdateLastFrame();
+    // Update last frame pose according to its reference keyframe
+    // Create "visual odometry" points if in Localization Mode
+    mCurrentFrame.SetPose(Sophus::SE3f());
+
+    UpdateLastFrame();
     
-//     // 根据IMU预测当前帧位姿
-//     if (mpAtlas->isImuInitialized() && (mCurrentFrame.mnId>mnLastRelocFrameId+mnFramesToResetIMU))
-//     {
-//         // Predict state with IMU if it is initialized and it doesnt need reset
-//         PredictStateIMU();
-//         return true;
-//     }
-//     // 跟踪恒速模型预测当前帧位姿
-//     else{
-//         mCurrentFrame.SetPose(mVelocity * mLastFrame.GetPose());
-//     }
+    // // 根据IMU预测当前帧位姿
+    // if (mpAtlas->isImuInitialized() && (mCurrentFrame.mnId>mnLastRelocFrameId+mnFramesToResetIMU))
+    // {
+    //     // Predict state with IMU if it is initialized and it doesnt need reset
+    //     PredictStateIMU();
+    //     return true;
+    // }
+    // // 跟踪恒速模型预测当前帧位姿
+    // else{
+        // mCurrentFrame.SetPose(mVelocity * mLastFrame.GetPose());
+    // }
 
 
 
-//     // 初始化地图点(地图点就是特征点的3D坐标)
-//     fill(mCurrentFrame.mvpMapPoints.begin(),mCurrentFrame.mvpMapPoints.end(),static_cast<MapPoint*>(NULL));
+    // 初始化地图点(地图点就是特征点的3D坐标)
+    // fill(mCurrentFrame.mvpMapPoints.begin(),mCurrentFrame.mvpMapPoints.end(),static_cast<MapPoint*>(NULL));
 
-//     // Project points seen in previous frame
-//     int th;
+    // Project points seen in previous frame
+    int th;
 
-//     if(mSensor==System::STEREO)
-//         th=7;
-//     else
-//         th=15;
+    // if(mSensor==System::STEREO)
+    //     th=7;
+    // else
+    th=15;
 
-//     // 特征点匹配(根据前一帧的MapPoints重投影，然后在投影点的一定范围内进行ORB特征匹配，生成当前帧的MapPoints)
-//     int nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
+    // // 特征点匹配(根据前一帧的MapPoints重投影，然后在投影点的一定范围内进行ORB特征匹配，生成当前帧的MapPoints)
+    // int nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
 
-//     // If few matches, uses a wider window search
-//     if(nmatches<20)
-//     {
-//         Verbose::PrintMess("Not enough matches, wider window search!!", Verbose::VERBOSITY_NORMAL);
-//         fill(mCurrentFrame.mvpMapPoints.begin(),mCurrentFrame.mvpMapPoints.end(),static_cast<MapPoint*>(NULL));
+    // // If few matches, uses a wider window search
+    // if(nmatches<20)
+    // {
+    //     Verbose::PrintMess("Not enough matches, wider window search!!", Verbose::VERBOSITY_NORMAL);
+    //     fill(mCurrentFrame.mvpMapPoints.begin(),mCurrentFrame.mvpMapPoints.end(),static_cast<MapPoint*>(NULL));
 
-//         nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,2*th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
-//         Verbose::PrintMess("Matches with wider search: " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
+    //     nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,2*th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
+    //     Verbose::PrintMess("Matches with wider search: " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
 
-//     }
+    // }
 
-//     if(nmatches<20)
-//     {
-//         Verbose::PrintMess("Not enough matches!!", Verbose::VERBOSITY_NORMAL);
-//         if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
-//             return true;
-//         else
-//             return false;
-//     }
+    // if(nmatches<20)
+    // {
+    //     Verbose::PrintMess("Not enough matches!!", Verbose::VERBOSITY_NORMAL);
+    //     if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
+    //         return true;
+    //     else
+    //         return false;
+    // }
 
-//     // Optimize frame pose with all matches
-//     Optimizer::PoseOptimization(&mCurrentFrame);
+    // // Optimize frame pose with all matches
+    // Optimizer::PoseOptimization(&mCurrentFrame);
 
-//     // 优化时会有内点、外点的区分，这里把被判断为外点的那些点都剔除
-//     // Discard outliers
-//     int nmatchesMap = 0;
-//     for(int i =0; i<mCurrentFrame.N; i++)
-//     {
-//         if(mCurrentFrame.mvpMapPoints[i])
-//         {
-//             if(mCurrentFrame.mvbOutlier[i]) // 如果是外点
-//             {
-//                 MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
+    // // 优化时会有内点、外点的区分，这里把被判断为外点的那些点都剔除
+    // // Discard outliers
+    // int nmatchesMap = 0;
+    // for(int i =0; i<mCurrentFrame.N; i++)
+    // {
+    //     if(mCurrentFrame.mvpMapPoints[i])
+    //     {
+    //         if(mCurrentFrame.mvbOutlier[i]) // 如果是外点
+    //         {
+    //             MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
 
-//                 mCurrentFrame.mvpMapPoints[i]=static_cast<MapPoint*>(NULL);
-//                 mCurrentFrame.mvbOutlier[i]=false;
-//                 if(i < mCurrentFrame.Nleft){
-//                     pMP->mbTrackInView = false;
-//                 }
-//                 else{
-//                     pMP->mbTrackInViewR = false;
-//                 }
-//                 pMP->mnLastFrameSeen = mCurrentFrame.mnId;
-//                 nmatches--;
-//             }
-//             else if(mCurrentFrame.mvpMapPoints[i]->Observations()>0)
-//                 nmatchesMap++;
-//         }
-//     }
+    //             mCurrentFrame.mvpMapPoints[i]=static_cast<MapPoint*>(NULL);
+    //             mCurrentFrame.mvbOutlier[i]=false;
+    //             if(i < mCurrentFrame.Nleft){
+    //                 pMP->mbTrackInView = false;
+    //             }
+    //             else{
+    //                 pMP->mbTrackInViewR = false;
+    //             }
+    //             pMP->mnLastFrameSeen = mCurrentFrame.mnId;
+    //             nmatches--;
+    //         }
+    //         else if(mCurrentFrame.mvpMapPoints[i]->Observations()>0)
+    //             nmatchesMap++;
+    //     }
+    // }
 
-//     if(mbOnlyTracking)
-//     {
-//         mbVO = nmatchesMap<10;
-//         return nmatches>20;
-//     }
+    // if(mbOnlyTracking)
+    // {
+    //     mbVO = nmatchesMap<10;
+    //     return nmatches>20;
+    // }
 
-//     if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
-//         return true;
-//     else
-//         return nmatchesMap>=10;
-// }
+    // if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
+    //     return true;
+    // else
+    //     return nmatchesMap>=10;
+    return true;
+}
 
 // /**
 //  * @brief 跟踪局部地图

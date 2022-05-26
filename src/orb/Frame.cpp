@@ -19,7 +19,7 @@
 #include "Frame.h"
 
 // #include "G2oTypes.h"
-// #include "MapPoint.h"
+#include "MapPoint.h"
 // #include "KeyFrame.h"
 // #include "ORBextractor.h"
 // #include "Converter.h"
@@ -54,16 +54,18 @@ Frame::Frame(): mpPrevFrame(NULL), mbIsSet(false)
 //Copy Constructor
 Frame::Frame(const Frame &frame)
     : mpORBextractorLeft(frame.mpORBextractorLeft),
-     mK(frame.mK.clone()), /*mK_(Converter::toMatrix3f(frame.mK)),*/ mDistCoef(frame.mDistCoef.clone()),
+     mK(frame.mK.clone()), mK_(Converter::toMatrix3f(frame.mK)), mDistCoef(frame.mDistCoef.clone()),
      mbf(frame.mbf), mb(frame.mb), mThDepth(frame.mThDepth), N(frame.N), mvKeys(frame.mvKeys),
      mvKeysUn(frame.mvKeysUn),
+     mvpMapPoints(frame.mvpMapPoints),
      mvDepth(frame.mvDepth),
      mDescriptors(frame.mDescriptors.clone()),
      mnId(frame.mnId), mnScaleLevels(frame.mnScaleLevels),
      mfScaleFactor(frame.mfScaleFactor), mfLogScaleFactor(frame.mfLogScaleFactor),
      mvScaleFactors(frame.mvScaleFactors), mvInvScaleFactors(frame.mvInvScaleFactors),
      mvLevelSigma2(frame.mvLevelSigma2), mvInvLevelSigma2(frame.mvInvLevelSigma2), mpPrevFrame(frame.mpPrevFrame),
-     mbIsSet(frame.mbIsSet)
+     mbIsSet(frame.mbIsSet),
+     mpCamera(frame.mpCamera),mTcw(frame.mTcw), mbHasPose(false)
 {
     // 复制grid信息
     for(int i=0;i<FRAME_GRID_COLS;i++)
@@ -71,8 +73,8 @@ Frame::Frame(const Frame &frame)
             mGrid[i][j]=frame.mGrid[i][j];
         }
 
-    // if(frame.mbHasPose)
-    //     SetPose(frame.GetPose());
+    if(frame.mbHasPose)
+        SetPose(frame.GetPose());
 
     // if(frame.HasVelocity())
     // {
@@ -142,10 +144,10 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, ORBextractor* extrac
 
     UndistortKeyPoints();
 
-    // 计算地图点的3D坐标
+    // 计算特征点的深度
     ComputeStereoFromRGBD(imDepth);
 
-    // mvpMapPoints = vector<MapPoint*>(N,static_cast<MapPoint*>(NULL));
+    mvpMapPoints = vector<MapPoint*>(N,static_cast<MapPoint*>(NULL));
 
     // mmProjectPoints.clear();
     // mmMatchedInImage.clear();
@@ -846,7 +848,7 @@ void Frame::ComputeStereoFromRGBD(const cv::Mat &imDepth)
     }
 }
 
-//
+// 特征点反投影成3D坐标
 bool Frame::UnprojectStereo(const int &i, Eigen::Vector3f &x3D)
 {
     const float z = mvDepth[i];
@@ -856,8 +858,7 @@ bool Frame::UnprojectStereo(const int &i, Eigen::Vector3f &x3D)
         const float x = (u-cx)*z*invfx;
         const float y = (v-cy)*z*invfy;
         Eigen::Vector3f x3Dc(x, y, z);
-        // x3D = mRwc * x3Dc + mOw; // 我们没有世界坐标系
-        x3D = x3Dc;
+        x3D = mRwc * x3Dc + mOw; // 我们这里没有旋转 mOw 就是(0,0,0)
         return true;
     } else
         return false;

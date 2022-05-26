@@ -46,7 +46,7 @@ namespace ORB_SLAM3
 #define FRAME_GRID_ROWS 48
 #define FRAME_GRID_COLS 64
 
-// class MapPoint;
+class MapPoint;
 // class KeyFrame;
 // class ConstraintPoseImu;
 // class GeometricCamera;
@@ -128,20 +128,20 @@ public:
     // Computes rotation, translation and camera center matrices from the camera pose.
     void UpdatePoseMatrices();
 
-    // // Returns the camera center.
-    // inline Eigen::Vector3f GetCameraCenter(){
-    //     return mOw;
-    // }
+    // Returns the camera center.
+    inline Eigen::Vector3f GetCameraCenter(){
+        return mOw;
+    }
 
     // // Returns inverse of rotation
     // inline Eigen::Matrix3f GetRotationInverse(){
     //     return mRwc;
     // }
 
-    // inline Sophus::SE3<float> GetPose() const {
-    //     //TODO: can the Frame pose be accsessed from several threads? should this be protected somehow?
-    //     return mTcw;
-    // }
+    inline Sophus::SE3<float> GetPose() const {
+        //TODO: can the Frame pose be accsessed from several threads? should this be protected somehow?
+        return mTcw;
+    }
 
     // inline Eigen::Matrix3f GetRwc() const {
     //     return mRwc;
@@ -229,7 +229,7 @@ public:
     cv::Mat mDescriptors;
 
     // Corresponding stereo coordinate and depth for each keypoint.
-    // std::vector<MapPoint*> mvpMapPoints;
+    std::vector<MapPoint*> mvpMapPoints;
     // "Monocular" keypoints have a negative value.
     std::vector<float> mvuRight;
     std::vector<float> mvDepth;

@@ -49,126 +49,129 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     MapPoint();
 
-    MapPoint(const Eigen::Vector3f &Pos, KeyFrame* pRefKF, Map* pMap);
-    MapPoint(const double invDepth, cv::Point2f uv_init, KeyFrame* pRefKF, KeyFrame* pHostKF, Map* pMap);
-    MapPoint(const Eigen::Vector3f &Pos,  Map* pMap, Frame* pFrame, const int &idxF);
+    MapPoint(const Eigen::Vector3f &Pos, Frame* pFrame, const int &idxF);
+
+    // MapPoint(const Eigen::Vector3f &Pos, KeyFrame* pRefKF, Map* pMap);
+    // MapPoint(const double invDepth, cv::Point2f uv_init, KeyFrame* pRefKF, KeyFrame* pHostKF, Map* pMap);
+    // MapPoint(const Eigen::Vector3f &Pos,  Map* pMap, Frame* pFrame, const int &idxF);
 
     void SetWorldPos(const Eigen::Vector3f &Pos);
     Eigen::Vector3f GetWorldPos();
 
-    Eigen::Vector3f GetNormal();
-    void SetNormalVector(const Eigen::Vector3f& normal);
+    // Eigen::Vector3f GetNormal();
+    // void SetNormalVector(const Eigen::Vector3f& normal);
 
-    KeyFrame* GetReferenceKeyFrame();
+    // KeyFrame* GetReferenceKeyFrame();
 
-    std::map<KeyFrame*,std::tuple<int,int>> GetObservations();
-    int Observations();
+    // std::map<KeyFrame*,std::tuple<int,int>> GetObservations();
+    // int Observations();
 
-    void AddObservation(KeyFrame* pKF,int idx);
-    void EraseObservation(KeyFrame* pKF);
+    // void AddObservation(KeyFrame* pKF,int idx);
+    // void EraseObservation(KeyFrame* pKF);
 
-    std::tuple<int,int> GetIndexInKeyFrame(KeyFrame* pKF);
-    bool IsInKeyFrame(KeyFrame* pKF);
+    // std::tuple<int,int> GetIndexInKeyFrame(KeyFrame* pKF);
+    // bool IsInKeyFrame(KeyFrame* pKF);
 
-    void SetBadFlag();
-    bool isBad();
+    // void SetBadFlag();
+    // bool isBad();
 
-    void Replace(MapPoint* pMP);    
-    MapPoint* GetReplaced();
+    // void Replace(MapPoint* pMP);    
+    // MapPoint* GetReplaced();
 
-    void IncreaseVisible(int n=1);
-    void IncreaseFound(int n=1);
-    float GetFoundRatio();
-    inline int GetFound(){
-        return mnFound;
-    }
+    // void IncreaseVisible(int n=1);
+    // void IncreaseFound(int n=1);
+    // float GetFoundRatio();
+    // inline int GetFound(){
+    //     return mnFound;
+    // }
 
-    void ComputeDistinctiveDescriptors();
+    // void ComputeDistinctiveDescriptors();
 
-    cv::Mat GetDescriptor();
+    // cv::Mat GetDescriptor();
 
-    void UpdateNormalAndDepth();
+    // void UpdateNormalAndDepth();
 
-    float GetMinDistanceInvariance();
-    float GetMaxDistanceInvariance();
-    int PredictScale(const float &currentDist, KeyFrame*pKF);
-    int PredictScale(const float &currentDist, Frame* pF);
+    // float GetMinDistanceInvariance();
+    // float GetMaxDistanceInvariance();
+    // int PredictScale(const float &currentDist, KeyFrame*pKF);
+    // int PredictScale(const float &currentDist, Frame* pF);
 
-    Map* GetMap();
-    void UpdateMap(Map* pMap);
+    // Map* GetMap();
+    // void UpdateMap(Map* pMap);
 
-    void PrintObservations();
+    // void PrintObservations();
 
-    void PreSave(set<KeyFrame*>& spKF,set<MapPoint*>& spMP);
-    void PostLoad(map<long unsigned int, KeyFrame*>& mpKFid, map<long unsigned int, MapPoint*>& mpMPid);
+    // void PreSave(set<KeyFrame*>& spKF,set<MapPoint*>& spMP);
+    // void PostLoad(map<long unsigned int, KeyFrame*>& mpKFid, map<long unsigned int, MapPoint*>& mpMPid);
 
 public:
-    long unsigned int mnId;
-    static long unsigned int nNextId;
-    long int mnFirstKFid;
-    long int mnFirstFrame;
-    int nObs;
+    long unsigned int mnId; // 当前帧id
+    static long unsigned int nNextId; // 用来计数的
+    long int mnFirstKFid; // 第一个关键帧的id
+    long int mnFirstFrame; // 第一个看到这个地图点的帧的id
+    int nObs; // 被观测次数
 
-    // Variables used by the tracking
-    float mTrackProjX;
-    float mTrackProjY;
-    float mTrackDepth;
-    float mTrackDepthR;
-    float mTrackProjXR;
-    float mTrackProjYR;
-    bool mbTrackInView, mbTrackInViewR;
-    int mnTrackScaleLevel, mnTrackScaleLevelR;
-    float mTrackViewCos, mTrackViewCosR;
-    long unsigned int mnTrackReferenceForFrame;
-    long unsigned int mnLastFrameSeen;
+    // // Variables used by the tracking
+    // float mTrackProjX;
+    // float mTrackProjY;
+    // float mTrackDepth;
+    // float mTrackDepthR;
+    // float mTrackProjXR;
+    // float mTrackProjYR;
+    // bool mbTrackInView, mbTrackInViewR;
+    // int mnTrackScaleLevel, mnTrackScaleLevelR;
+    // float mTrackViewCos, mTrackViewCosR;
+    // long unsigned int mnTrackReferenceForFrame;
+    // long unsigned int mnLastFrameSeen;
 
-    // Variables used by local mapping
-    long unsigned int mnBALocalForKF;
-    long unsigned int mnFuseCandidateForKF;
+    // // Variables used by local mapping
+    // long unsigned int mnBALocalForKF;
+    // long unsigned int mnFuseCandidateForKF;
 
-    // Variables used by loop closing
-    long unsigned int mnLoopPointForKF;
-    long unsigned int mnCorrectedByKF;
-    long unsigned int mnCorrectedReference;    
-    Eigen::Vector3f mPosGBA;
-    long unsigned int mnBAGlobalForKF;
-    long unsigned int mnBALocalForMerge;
+    // // Variables used by loop closing
+    // long unsigned int mnLoopPointForKF;
+    // long unsigned int mnCorrectedByKF;
+    // long unsigned int mnCorrectedReference;    
+    // Eigen::Vector3f mPosGBA;
+    // long unsigned int mnBAGlobalForKF;
+    // long unsigned int mnBALocalForMerge;
 
-    // Variable used by merging
-    Eigen::Vector3f mPosMerge;
-    Eigen::Vector3f mNormalVectorMerge;
+    // // Variable used by merging
+    // Eigen::Vector3f mPosMerge;
+    // Eigen::Vector3f mNormalVectorMerge;
 
 
-    // Fopr inverse depth optimization
-    double mInvDepth;
-    double mInitU;
-    double mInitV;
-    KeyFrame* mpHostKF;
+    // // Fopr inverse depth optimization
+    // double mInvDepth;
+    // double mInitU;
+    // double mInitV;
+    // KeyFrame* mpHostKF;
 
-    static std::mutex mGlobalMutex;
+    // static std::mutex mGlobalMutex;
 
-    unsigned int mnOriginMapId;
+    // unsigned int mnOriginMapId;
+
 
 protected:    
 
-     // Position in absolute coordinates
-     Eigen::Vector3f mWorldPos;
+    // Position in absolute coordinates
+    Eigen::Vector3f mWorldPos;
 
-     // Keyframes observing the point and associated index in keyframe
-     std::map<KeyFrame*,std::tuple<int,int> > mObservations;
-     // For save relation without pointer, this is necessary for save/load function
-     std::map<long unsigned int, int> mBackupObservationsId1;
-     std::map<long unsigned int, int> mBackupObservationsId2;
+    //  // Keyframes observing the point and associated index in keyframe
+    //  std::map<KeyFrame*,std::tuple<int,int> > mObservations;
+    //  // For save relation without pointer, this is necessary for save/load function
+    //  std::map<long unsigned int, int> mBackupObservationsId1;
+    //  std::map<long unsigned int, int> mBackupObservationsId2;
 
-     // Mean viewing direction
-     Eigen::Vector3f mNormalVector;
+    //  // Mean viewing direction
+    //  Eigen::Vector3f mNormalVector;
 
      // Best descriptor to fast matching
      cv::Mat mDescriptor;
 
-     // Reference KeyFrame
-     KeyFrame* mpRefKF;
-     long unsigned int mBackupRefKFId;
+    //  // Reference KeyFrame
+    //  KeyFrame* mpRefKF;
+    //  long unsigned int mBackupRefKFId;
 
      // Tracking counters
      int mnVisible;
@@ -177,19 +180,19 @@ protected:
      // Bad flag (we do not currently erase MapPoint from memory)
      bool mbBad;
      MapPoint* mpReplaced;
-     // For save relation without pointer, this is necessary for save/load function
-     long long int mBackupReplacedId;
+    //  // For save relation without pointer, this is necessary for save/load function
+    //  long long int mBackupReplacedId;
 
      // Scale invariance distances
      float mfMinDistance;
      float mfMaxDistance;
 
-     Map* mpMap;
+    //  Map* mpMap;
 
-     // Mutex
-     std::mutex mMutexPos;
-     std::mutex mMutexFeatures;
-     std::mutex mMutexMap;
+    //  // Mutex
+    //  std::mutex mMutexPos;
+    //  std::mutex mMutexFeatures;
+    //  std::mutex mMutexMap;
 
 };
 
