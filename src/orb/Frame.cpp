@@ -252,9 +252,9 @@ void Frame::ExtractORB(int flag, const cv::Mat &im, const int x0, const int x1)
     //     monoRight = (*mpORBextractorRight)(im,cv::Mat(),mvKeysRight,mDescriptorsRight,vLapping);
 }
 
-// bool Frame::isSet() const {
-//     return mbIsSet;
-// }
+bool Frame::isSet() const {
+    return mbIsSet;
+}
 
 void Frame::SetPose(const Sophus::SE3<float> &Tcw) {
     mTcw = Tcw;

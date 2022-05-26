@@ -33,7 +33,8 @@ include_directories ("${PROJECT_SOURCE_DIR}/include;${PROJECT_SOURCE_DIR}/src")
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
     include_directories (${Pangolin_INCLUDE_DIRS}
                          ${PROJECT_SOURCE_DIR}/Thirdparty/Sophus
-                         ${PROJECT_SOURCE_DIR}/Thirdparty/g2o)
+                         ${PROJECT_SOURCE_DIR}/Thirdparty/g2o
+                         ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2)
 endif()
 
 # tensorflow lite
@@ -65,6 +66,7 @@ add_executable(orbbec_camera_driver
                 src/viewer.cpp
                 src/frame.cpp
                 src/orb/ORBextractor.cpp
+                src/orb/ORBmatcher.cpp
                 src/orb/MapPoint.cpp
                 src/orb/Frame.cpp
                 src/orb/Tracking.cpp

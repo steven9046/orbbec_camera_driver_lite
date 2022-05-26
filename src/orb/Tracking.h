@@ -312,9 +312,9 @@ protected:
 
     // bool mbCreatedMap;
 
-    // //Motion Model
-    // bool mbVelocity{false};
-    // Sophus::SE3f mVelocity;
+    //Motion Model
+    bool mbVelocity{false};
+    Sophus::SE3f mVelocity;
 
     //Color order (true RGB, false BGR, ignored if grayscale)
     bool mbRGB;

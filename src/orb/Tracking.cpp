@@ -1,25 +1,24 @@
 /**
-* This file is part of ORB-SLAM3
-*
-* Copyright (C) 2017-2021 Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
-* Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
-*
-* ORB-SLAM3 is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
-* License as published by the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
-* the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with ORB-SLAM3.
-* If not, see <http://www.gnu.org/licenses/>.
-*/
-
+ * This file is part of ORB-SLAM3
+ *
+ * Copyright (C) 2017-2021 Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
+ * Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
+ *
+ * ORB-SLAM3 is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+ * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with ORB-SLAM3.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "Tracking.h"
 
-// #include "ORBmatcher.h"
+#include "ORBmatcher.h"
 // #include "FrameDrawer.h"
 // #include "Converter.h"
 // #include "G2oTypes.h"
@@ -36,8 +35,7 @@
 
 using namespace std;
 
-namespace ORB_SLAM3
-{
+namespace ORB_SLAM3 {
 
 /**
  * @brief 构造函数， 这个构造函数没有干什么事情
@@ -45,103 +43,102 @@ namespace ORB_SLAM3
  * @param[in] pMapDrawer    地图绘制器
  * @param[in] pViewer       可视化
  * @param[in] pAtlas        地图
- * @param[in] pKFDB         关键帧数据库 
+ * @param[in] pKFDB         关键帧数据库
  * 1. 加载配置文件，初始化一些相关数据结构
  */
-Tracking::Tracking(Settings* settings):
-    mState(NO_IMAGES_YET),          // 初始状态为无图像
-    mTrackedFr(0),                  // 跟踪到的帧数
-    mbStep(false),                  
-    mbVO(false), 
-    mbReadyToInitializate(false), 
-    bStepByStep(false), 
-    mnInitialFrameId(0), 
-    mnFirstFrameId(0),
-    mbOnlyTracking(false),
-    mpCamera2(nullptr)
-{
-    // 1. 加载配置文件
-    // Load camera parameters from settings file
-    if(settings){
-        newParameterLoader(settings);
-    }
-    // else{
-    //     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
+Tracking::Tracking(Settings* settings)
+    : mState(NO_IMAGES_YET),  // 初始状态为无图像
+      mTrackedFr(0),          // 跟踪到的帧数
+      mbStep(false),
+      mbVO(false),
+      mbReadyToInitializate(false),
+      bStepByStep(false),
+      mnInitialFrameId(0),
+      mnFirstFrameId(0),
+      mbOnlyTracking(false),
+      mpCamera2(nullptr) {
+  // 1. 加载配置文件
+  // Load camera parameters from settings file
+  if (settings) {
+    newParameterLoader(settings);
+  }
+  // else{
+  //     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
 
-    //     bool b_parse_cam = ParseCamParamFile(fSettings);
-    //     if(!b_parse_cam)
-    //     {
-    //         std::cout << "*Error with the camera parameters in the config file*" << std::endl;
-    //     }
+  //     bool b_parse_cam = ParseCamParamFile(fSettings);
+  //     if(!b_parse_cam)
+  //     {
+  //         std::cout << "*Error with the camera parameters in the config file*" << std::endl;
+  //     }
 
-    //     // Load ORB parameters
-    //     bool b_parse_orb = ParseORBParamFile(fSettings);
-    //     if(!b_parse_orb)
-    //     {
-    //         std::cout << "*Error with the ORB parameters in the config file*" << std::endl;
-    //     }
+  //     // Load ORB parameters
+  //     bool b_parse_orb = ParseORBParamFile(fSettings);
+  //     if(!b_parse_orb)
+  //     {
+  //         std::cout << "*Error with the ORB parameters in the config file*" << std::endl;
+  //     }
 
-    //     bool b_parse_imu = true;
-    //     if(sensor==System::IMU_MONOCULAR || sensor==System::IMU_STEREO || sensor==System::IMU_RGBD)
-    //     {
-    //         b_parse_imu = ParseIMUParamFile(fSettings);
-    //         if(!b_parse_imu)
-    //         {
-    //             std::cout << "*Error with the IMU parameters in the config file*" << std::endl;
-    //         }
+  //     bool b_parse_imu = true;
+  //     if(sensor==System::IMU_MONOCULAR || sensor==System::IMU_STEREO || sensor==System::IMU_RGBD)
+  //     {
+  //         b_parse_imu = ParseIMUParamFile(fSettings);
+  //         if(!b_parse_imu)
+  //         {
+  //             std::cout << "*Error with the IMU parameters in the config file*" << std::endl;
+  //         }
 
-    //         mnFramesToResetIMU = mMaxFrames;
-    //     }
+  //         mnFramesToResetIMU = mMaxFrames;
+  //     }
 
-    //     if(!b_parse_cam || !b_parse_orb || !b_parse_imu)
-    //     {
-    //         std::cerr << "**ERROR in the config file, the format is not correct**" << std::endl;
-    //         try
-    //         {
-    //             throw -1;
-    //         }
-    //         catch(exception &e)
-    //         {
+  //     if(!b_parse_cam || !b_parse_orb || !b_parse_imu)
+  //     {
+  //         std::cerr << "**ERROR in the config file, the format is not correct**" << std::endl;
+  //         try
+  //         {
+  //             throw -1;
+  //         }
+  //         catch(exception &e)
+  //         {
 
-    //         }
-    //     }
-    // }
+  //         }
+  //     }
+  // }
 
-    // initID = 0; lastID = 0;
-    // mbInitWith3KFs = false;
-    // mnNumDataset = 0;
+  // initID = 0; lastID = 0;
+  // mbInitWith3KFs = false;
+  // mnNumDataset = 0;
 
-    // // 这里可以配置多个相机？？ 输出相机信息
-    // vector<GeometricCamera*> vpCams = mpAtlas->GetAllCameras();
-    // std::cout << "There are " << vpCams.size() << " cameras in the atlas" << std::endl;
-    // for(GeometricCamera* pCam : vpCams)
-    // {
-    //     std::cout << "Camera " << pCam->GetId();
-    //     if(pCam->GetType() == GeometricCamera::CAM_PINHOLE)
-    //     {
-    //         std::cout << " is pinhole" << std::endl;
-    //     }
-    //     else if(pCam->GetType() == GeometricCamera::CAM_FISHEYE)
-    //     {
-    //         std::cout << " is fisheye" << std::endl;
-    //     }
-    //     else
-    //     {
-    //         std::cout << " is unknown" << std::endl;
-    //     }
-    // }
+  // // 这里可以配置多个相机？？ 输出相机信息
+  // vector<GeometricCamera*> vpCams = mpAtlas->GetAllCameras();
+  // std::cout << "There are " << vpCams.size() << " cameras in the atlas" << std::endl;
+  // for(GeometricCamera* pCam : vpCams)
+  // {
+  //     std::cout << "Camera " << pCam->GetId();
+  //     if(pCam->GetType() == GeometricCamera::CAM_PINHOLE)
+  //     {
+  //         std::cout << " is pinhole" << std::endl;
+  //     }
+  //     else if(pCam->GetType() == GeometricCamera::CAM_FISHEYE)
+  //     {
+  //         std::cout << " is fisheye" << std::endl;
+  //     }
+  //     else
+  //     {
+  //         std::cout << " is unknown" << std::endl;
+  //     }
+  // }
 
-// #ifdef REGISTER_TIMES
-//     vdRectStereo_ms.clear();
-//     vdResizeImage_ms.clear();
-//     vdORBExtract_ms.clear();
-//     vdStereoMatch_ms.clear();
-//     vdIMUInteg_ms.clear();
-//     vdPosePred_ms.clear();
-//     vdLMTrack_ms.clear();
-//     vdNewKF_ms.clear();
-//     vdTrackTotal_ms.clear();
-// #endif
+  // #ifdef REGISTER_TIMES
+  //     vdRectStereo_ms.clear();
+  //     vdResizeImage_ms.clear();
+  //     vdORBExtract_ms.clear();
+  //     vdStereoMatch_ms.clear();
+  //     vdIMUInteg_ms.clear();
+  //     vdPosePred_ms.clear();
+  //     vdLMTrack_ms.clear();
+  //     vdNewKF_ms.clear();
+  //     vdTrackTotal_ms.clear();
+  // #endif
 }
 
 // #ifdef REGISTER_TIMES
@@ -220,7 +217,6 @@ Tracking::Tracking(Settings* settings):
 //           << mpLocalMapper->vnLBA_edges[i] << endl;
 //     }
 
-
 //     f.close();
 // }
 
@@ -239,7 +235,8 @@ Tracking::Tracking(Settings* settings):
 //     f.open("TrackingTimeStats.txt");
 //     f << fixed << setprecision(6);
 
-//     f << "#Image Rect[ms], Image Resize[ms], ORB ext[ms], Stereo match[ms], IMU preint[ms], Pose pred[ms], LM track[ms], KF dec[ms], Total[ms]" << endl;
+//     f << "#Image Rect[ms], Image Resize[ms], ORB ext[ms], Stereo match[ms], IMU preint[ms], Pose pred[ms], LM track[ms], KF dec[ms], Total[ms]" <<
+//     endl;
 
 //     for(int i=0; i<vdTrackTotal_ms.size(); ++i)
 //     {
@@ -279,7 +276,6 @@ Tracking::Tracking(Settings* settings):
 //     // Save data in files
 //     TrackStats2File();
 //     LocalMapStats2File();
-
 
 //     ofstream f;
 //     f.open("ExecMean.txt");
@@ -540,13 +536,12 @@ Tracking::Tracking(Settings* settings):
 
 // #endif
 
-Tracking::~Tracking()
-{
-    //f_track_stats.close();
+Tracking::~Tracking() {
+  // f_track_stats.close();
 }
 
 /**
- * @brief 
+ * @brief
  * 1. 设置几何相机(之后会用到封装在这里边的函数，例如极线搜索)
  * 2. 畸变参数(构造Frame时使用)
  * 2. mImageScale (没啥用)
@@ -555,96 +550,95 @@ Tracking::~Tracking()
  * 5. 一些帧率方面的设置
  * 6. ORB 的一些阈值
  */
-void Tracking::newParameterLoader(Settings *settings) {
-    mpCamera = settings->camera1();
-    // mpCamera = mpAtlas->AddCamera(mpCamera); // Atlas里的camera也是参数加载的，都是同一个
+void Tracking::newParameterLoader(Settings* settings) {
+  mpCamera = settings->camera1();
+  // mpCamera = mpAtlas->AddCamera(mpCamera); // Atlas里的camera也是参数加载的，都是同一个
 
-    // Frame里的相机参数是通过这tracking传进去的，Frame里只给keypoint去畸变了
-    if(settings->needToUndistort()){
-        mDistCoef = settings->camera1DistortionCoef();
-    }
-    else{
-        mDistCoef = cv::Mat::zeros(4,1,CV_32F);
-    }
-    
-    //
-    //TODO: missing image scaling and rectification
-    mImageScale = 1.0f; // 摆设
+  // Frame里的相机参数是通过这tracking传进去的，Frame里只给keypoint去畸变了
+  if (settings->needToUndistort()) {
+    mDistCoef = settings->camera1DistortionCoef();
+  } else {
+    mDistCoef = cv::Mat::zeros(4, 1, CV_32F);
+  }
 
-    // Frame 的参数是通过这个传进去的
-    // OpenCv矩阵
-    mK = cv::Mat::eye(3,3,CV_32F);
-    mK.at<float>(0,0) = mpCamera->getParameter(0);
-    mK.at<float>(1,1) = mpCamera->getParameter(1);
-    mK.at<float>(0,2) = mpCamera->getParameter(2);
-    mK.at<float>(1,2) = mpCamera->getParameter(3);
+  //
+  // TODO: missing image scaling and rectification
+  mImageScale = 1.0f;  // 摆设
 
-    // Eigen矩阵
-    mK_.setIdentity();
-    mK_(0,0) = mpCamera->getParameter(0);
-    mK_(1,1) = mpCamera->getParameter(1);
-    mK_(0,2) = mpCamera->getParameter(2);
-    mK_(1,2) = mpCamera->getParameter(3);
+  // Frame 的参数是通过这个传进去的
+  // OpenCv矩阵
+  mK = cv::Mat::eye(3, 3, CV_32F);
+  mK.at<float>(0, 0) = mpCamera->getParameter(0);
+  mK.at<float>(1, 1) = mpCamera->getParameter(1);
+  mK.at<float>(0, 2) = mpCamera->getParameter(2);
+  mK.at<float>(1, 2) = mpCamera->getParameter(3);
 
-    // if((mSensor==System::STEREO || mSensor==System::IMU_STEREO || mSensor==System::IMU_RGBD) &&
-    //     settings->cameraType() == Settings::KannalaBrandt){
-    //     mpCamera2 = settings->camera2();
-    //     mpCamera2 = mpAtlas->AddCamera(mpCamera2);
+  // Eigen矩阵
+  mK_.setIdentity();
+  mK_(0, 0) = mpCamera->getParameter(0);
+  mK_(1, 1) = mpCamera->getParameter(1);
+  mK_(0, 2) = mpCamera->getParameter(2);
+  mK_(1, 2) = mpCamera->getParameter(3);
 
-    //     mTlr = settings->Tlr();
+  // if((mSensor==System::STEREO || mSensor==System::IMU_STEREO || mSensor==System::IMU_RGBD) &&
+  //     settings->cameraType() == Settings::KannalaBrandt){
+  //     mpCamera2 = settings->camera2();
+  //     mpCamera2 = mpAtlas->AddCamera(mpCamera2);
 
-    //     mpFrameDrawer->both = true;
-    // }
+  //     mTlr = settings->Tlr();
 
-    // if(mSensor==System::STEREO || mSensor==System::RGBD || mSensor==System::IMU_STEREO || mSensor==System::IMU_RGBD ){
-    //     // 应该是基线
-    //     mbf = settings->bf();
-    //     mThDepth = settings->b() * settings->thDepth();
-    // }
+  //     mpFrameDrawer->both = true;
+  // }
 
-    // 如果是RGBD相机
-    // if(mSensor==System::RGBD || mSensor==System::IMU_RGBD){
-        mDepthMapFactor = settings->depthMapFactor();
-        if(fabs(mDepthMapFactor)<1e-5)
-            mDepthMapFactor=1;
-        else
-            mDepthMapFactor = 1.0f/mDepthMapFactor;
-    // }
+  // if(mSensor==System::STEREO || mSensor==System::RGBD || mSensor==System::IMU_STEREO || mSensor==System::IMU_RGBD ){
+  //     // 应该是基线
+  //     mbf = settings->bf();
+  //     mThDepth = settings->b() * settings->thDepth();
+  // }
 
-    // mMinFrames = 0;
-    // mMaxFrames = settings->fps();
-    mbRGB = settings->rgb();
+  // 如果是RGBD相机
+  // if(mSensor==System::RGBD || mSensor==System::IMU_RGBD){
+  mDepthMapFactor = settings->depthMapFactor();
+  if (fabs(mDepthMapFactor) < 1e-5)
+    mDepthMapFactor = 1;
+  else
+    mDepthMapFactor = 1.0f / mDepthMapFactor;
+  // }
 
-    //ORB parameters
-    int nFeatures = settings->nFeatures(); // Number of features per image 
-    int nLevels = settings->nLevels(); // Number of levels in the scale pyramid
-    int fIniThFAST = settings->initThFAST(); // Initial threshold for the FAST corner detector
-    int fMinThFAST = settings->minThFAST(); // Minimum threshold for the FAST corner detector
-    float fScaleFactor = settings->scaleFactor(); // Scale factor between levels in the scale pyramid
+  // mMinFrames = 0;
+  // mMaxFrames = settings->fps();
+  mbRGB = settings->rgb();
 
-    // 创建ORB特征提取器
-    mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+  // ORB parameters
+  int nFeatures = settings->nFeatures();         // Number of features per image
+  int nLevels = settings->nLevels();             // Number of levels in the scale pyramid
+  int fIniThFAST = settings->initThFAST();       // Initial threshold for the FAST corner detector
+  int fMinThFAST = settings->minThFAST();        // Minimum threshold for the FAST corner detector
+  float fScaleFactor = settings->scaleFactor();  // Scale factor between levels in the scale pyramid
 
-    // if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
-    //     mpORBextractorRight = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+  // 创建ORB特征提取器
+  mpORBextractorLeft = new ORBextractor(nFeatures, fScaleFactor, nLevels, fIniThFAST, fMinThFAST);
 
-    // if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
-    //     mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+  // if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
+  //     mpORBextractorRight = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
 
-    // // IMU parameters
-    // Sophus::SE3f Tbc = settings->Tbc();
-    // mInsertKFsLost = settings->insertKFsWhenLost();
-    // mImuFreq = settings->imuFrequency();
-    // mImuPer = 0.001; //1.0 / (double) mImuFreq;     //TODO: ESTO ESTA BIEN?
-    // float Ng = settings->noiseGyro();
-    // float Na = settings->noiseAcc();
-    // float Ngw = settings->gyroWalk();
-    // float Naw = settings->accWalk();
+  // if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
+  //     mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
 
-    // const float sf = sqrt(mImuFreq);
-    // mpImuCalib = new IMU::Calib(Tbc,Ng*sf,Na*sf,Ngw/sf,Naw/sf);
+  // // IMU parameters
+  // Sophus::SE3f Tbc = settings->Tbc();
+  // mInsertKFsLost = settings->insertKFsWhenLost();
+  // mImuFreq = settings->imuFrequency();
+  // mImuPer = 0.001; //1.0 / (double) mImuFreq;     //TODO: ESTO ESTA BIEN?
+  // float Ng = settings->noiseGyro();
+  // float Na = settings->noiseAcc();
+  // float Ngw = settings->gyroWalk();
+  // float Naw = settings->accWalk();
 
-    // mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(),*mpImuCalib);
+  // const float sf = sqrt(mImuFreq);
+  // mpImuCalib = new IMU::Calib(Tbc,Ng*sf,Na*sf,Ngw/sf,Naw/sf);
+
+  // mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(),*mpImuCalib);
 }
 
 // bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
@@ -790,7 +784,6 @@ void Tracking::newParameterLoader(Settings *settings) {
 //         std::cout << "- cy: " << cy << std::endl;
 //         std::cout << "- k1: " << mDistCoef.at<float>(0) << std::endl;
 //         std::cout << "- k2: " << mDistCoef.at<float>(1) << std::endl;
-
 
 //         std::cout << "- p1: " << mDistCoef.at<float>(2) << std::endl;
 //         std::cout << "- p2: " << mDistCoef.at<float>(3) << std::endl;
@@ -1038,7 +1031,6 @@ void Tracking::newParameterLoader(Settings *settings) {
 //                 b_miss_params = true;
 //             }
 
-
 //             int leftLappingBegin = -1;
 //             int leftLappingEnd = -1;
 
@@ -1190,7 +1182,6 @@ void Tracking::newParameterLoader(Settings *settings) {
 
 //     cout << "- fps: " << fps << endl;
 
-
 //     int nRGB = fSettings["Camera.RGB"];
 //     mbRGB = nRGB;
 
@@ -1214,7 +1205,6 @@ void Tracking::newParameterLoader(Settings *settings) {
 //             std::cerr << "*ThDepth parameter doesn't exist or is not a real number*" << std::endl;
 //             b_miss_params = true;
 //         }
-
 
 //     }
 
@@ -1364,8 +1354,6 @@ void Tracking::newParameterLoader(Settings *settings) {
 //     if(!mInsertKFsLost)
 //         cout << "Do not insert keyframes when lost visual tracking " << endl;
 
-
-
 //     float Ng, Na, Ngw, Naw;
 
 //     node = fSettings["IMU.Frequency"];
@@ -1451,7 +1439,6 @@ void Tracking::newParameterLoader(Settings *settings) {
 
 //     mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(),*mpImuCalib);
 
-
 //     return true;
 // }
 
@@ -1487,55 +1474,46 @@ void Tracking::newParameterLoader(Settings *settings) {
  * 1. 创建Frame, 此过程中会提取ORB特征，并进行分配，以便加速匹配
  * 2. 进行帧间追踪
  */
-void Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD)
-{
-    mImGray = imRGB;
-    cv::Mat imDepth = imD;
+void Tracking::GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD) {
+  mImGray = imRGB;
+  cv::Mat imDepth = imD;
 
-    // 转成灰度图
-    if(mImGray.channels()==3)
-    {
-        if(mbRGB)
-            cvtColor(mImGray,mImGray,cv::COLOR_RGB2GRAY);
-        else
-            cvtColor(mImGray,mImGray,cv::COLOR_BGR2GRAY);
-    }
-    else if(mImGray.channels()==4) // 这是什么格式？
-    {
-        if(mbRGB)
-            cvtColor(mImGray,mImGray,cv::COLOR_RGBA2GRAY);
-        else
-            cvtColor(mImGray,mImGray,cv::COLOR_BGRA2GRAY);
-    }
+  // 转成灰度图
+  if (mImGray.channels() == 3) {
+    if (mbRGB)
+      cvtColor(mImGray, mImGray, cv::COLOR_RGB2GRAY);
+    else
+      cvtColor(mImGray, mImGray, cv::COLOR_BGR2GRAY);
+  } else if (mImGray.channels() == 4)  // 这是什么格式？
+  {
+    if (mbRGB)
+      cvtColor(mImGray, mImGray, cv::COLOR_RGBA2GRAY);
+    else
+      cvtColor(mImGray, mImGray, cv::COLOR_BGRA2GRAY);
+  }
 
-    // 深度图也要转换?
-    if((fabs(mDepthMapFactor-1.0f)>1e-5) || imDepth.type()!=CV_32F)
-        imDepth.convertTo(imDepth,CV_32F,mDepthMapFactor);
+  // 深度图也要转换?
+  if ((fabs(mDepthMapFactor - 1.0f) > 1e-5) || imDepth.type() != CV_32F) imDepth.convertTo(imDepth, CV_32F, mDepthMapFactor);
 
-    /**    1.构造Frame    **/ 
-    // if (mSensor == System::RGBD)
-        mCurrentFrame = Frame(mImGray,imDepth,mpORBextractorLeft,mK,mDistCoef,mbf,mThDepth,mpCamera);
-    // else if(mSensor == System::IMU_RGBD)
-    //     mCurrentFrame = Frame(mImGray,imDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,&mLastFrame,*mpImuCalib);
+  /**    1.构造Frame    **/
+  // if (mSensor == System::RGBD)
+  mCurrentFrame = Frame(mImGray, imDepth, mpORBextractorLeft, mK, mDistCoef, mbf, mThDepth, mpCamera);
+  // else if(mSensor == System::IMU_RGBD)
+  //     mCurrentFrame =
+  //     Frame(mImGray,imDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,&mLastFrame,*mpImuCalib);
 
+  // mCurrentFrame.mNameFile = filename;
+  // mCurrentFrame.mnDataset = mnNumDataset;
 
+  // #ifdef REGISTER_TIMES
+  //     vdORBExtract_ms.push_back(mCurrentFrame.mTimeORB_Ext);
+  // #endif
 
+  /**    2.帧间追踪    **/
+  Track();
 
-
-
-    // mCurrentFrame.mNameFile = filename;
-    // mCurrentFrame.mnDataset = mnNumDataset;
-
-// #ifdef REGISTER_TIMES
-//     vdORBExtract_ms.push_back(mCurrentFrame.mTimeORB_Ext);
-// #endif
-
-    /**    2.帧间追踪    **/ 
-    Track();
-
-    // return mCurrentFrame.GetPose();
+  // return mCurrentFrame.GetPose();
 }
-
 
 // void Tracking::GrabImuData(const IMU::Point &imuMeasurement)
 // {
@@ -1656,7 +1634,6 @@ void Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD)
 //     //Verbose::PrintMess("Preintegration is finished!! ", Verbose::VERBOSITY_DEBUG);
 // }
 
-
 // bool Tracking::PredictStateIMU()
 // {
 //     if(!mCurrentFrame.mpPrevFrame)
@@ -1675,9 +1652,9 @@ void Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD)
 //         const float t12 = mpImuPreintegratedFromLastKF->dT;
 
 //         Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaRotation(mpLastKeyFrame->GetImuBias()));
-//         Eigen::Vector3f twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mpImuPreintegratedFromLastKF->GetDeltaPosition(mpLastKeyFrame->GetImuBias());
-//         Eigen::Vector3f Vwb2 = Vwb1 + t12*Gz + Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaVelocity(mpLastKeyFrame->GetImuBias());
-//         mCurrentFrame.SetImuPoseVelocity(Rwb2,twb2,Vwb2);
+//         Eigen::Vector3f twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+
+//         Rwb1*mpImuPreintegratedFromLastKF->GetDeltaPosition(mpLastKeyFrame->GetImuBias()); Eigen::Vector3f Vwb2 = Vwb1 + t12*Gz + Rwb1 *
+//         mpImuPreintegratedFromLastKF->GetDeltaVelocity(mpLastKeyFrame->GetImuBias()); mCurrentFrame.SetImuPoseVelocity(Rwb2,twb2,Vwb2);
 
 //         mCurrentFrame.mImuBias = mpLastKeyFrame->GetImuBias();
 //         mCurrentFrame.mPredBias = mCurrentFrame.mImuBias;
@@ -1692,8 +1669,9 @@ void Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD)
 //         const float t12 = mCurrentFrame.mpImuPreintegratedFrame->dT;
 
 //         Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaRotation(mLastFrame.mImuBias));
-//         Eigen::Vector3f twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaPosition(mLastFrame.mImuBias);
-//         Eigen::Vector3f Vwb2 = Vwb1 + t12*Gz + Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaVelocity(mLastFrame.mImuBias);
+//         Eigen::Vector3f twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1 *
+//         mCurrentFrame.mpImuPreintegratedFrame->GetDeltaPosition(mLastFrame.mImuBias); Eigen::Vector3f Vwb2 = Vwb1 + t12*Gz + Rwb1 *
+//         mCurrentFrame.mpImuPreintegratedFrame->GetDeltaVelocity(mLastFrame.mImuBias);
 
 //         mCurrentFrame.SetImuPoseVelocity(Rwb2,twb2,Vwb2);
 
@@ -1713,285 +1691,309 @@ void Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD)
 // }
 
 /**
- * @brief 
+ * @brief
  * 1. 通过运动模型预测当前帧的位姿，之后通过图优化调整位姿 TrackWithMotionModel
  * 2. 通过局部地图的共视关系，再一次优化当前帧位姿 TrackLocalMap
  * 3. 是否需要生成新的关键帧 CreateNewKeyFrame
  */
-void Tracking::Track()
-{
-    // // 不知道这个flag作用
-    // if (bStepByStep)
+void Tracking::Track() {
+  // // 不知道这个flag作用
+  // if (bStepByStep)
+  // {
+  //     std::cout << "Tracking: Waiting to the next step" << std::endl;
+  //     while(!mbStep && bStepByStep)
+  //         usleep(500);
+  //     mbStep = false;
+  // }
+
+  // // IMU挂了
+  // if(mpLocalMapper->mbBadImu)
+  // {
+  //     cout << "TRACK: Reset map because local mapper set the bad imu flag " << endl;
+  //     mpSystem->ResetActiveMap();
+  //     return;
+  // }
+
+  // // 拿到当前地图
+  // Map* pCurrentMap = mpAtlas->GetCurrentMap();
+  // if(!pCurrentMap)
+  // {
+  //     cout << "ERROR: There is not an active map in the atlas" << endl;
+  // }
+
+  // if(mState!=NO_IMAGES_YET)
+  // {
+  //     if(mLastFrame.mTimeStamp>mCurrentFrame.mTimeStamp)
+  //     {
+  //         cerr << "ERROR: Frame with a timestamp older than previous frame detected!" << endl;
+  //         unique_lock<mutex> lock(mMutexImuQueue);
+  //         mlQueueImuData.clear();
+  //         CreateMapInAtlas();
+  //         return;
+  //     }
+  //     else if(mCurrentFrame.mTimeStamp>mLastFrame.mTimeStamp+1.0)
+  //     {
+  //         // cout << mCurrentFrame.mTimeStamp << ", " << mLastFrame.mTimeStamp << endl;
+  //         // cout << "id last: " << mLastFrame.mnId << "    id curr: " << mCurrentFrame.mnId << endl;
+  //         if(mpAtlas->isInertial())
+  //         {
+
+  //             if(mpAtlas->isImuInitialized())
+  //             {
+  //                 cout << "Timestamp jump detected. State set to LOST. Reseting IMU integration..." << endl;
+  //                 if(!pCurrentMap->GetIniertialBA2())
+  //                 {
+  //                     mpSystem->ResetActiveMap();
+  //                 }
+  //                 else
+  //                 {
+  //                     CreateMapInAtlas();
+  //                 }
+  //             }
+  //             else
+  //             {
+  //                 cout << "Timestamp jump detected, before IMU initialization. Reseting..." << endl;
+  //                 mpSystem->ResetActiveMap();
+  //             }
+  //             return;
+  //         }
+
+  //     }
+  // }
+
+  // if ((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) && mpLastKeyFrame)
+  //     mCurrentFrame.SetNewBias(mpLastKeyFrame->GetImuBias());
+
+  if (mState == NO_IMAGES_YET) {
+    mState = NOT_INITIALIZED;
+  }
+  // std::cout << "mstate: " << mState <<std::endl;
+  mLastProcessedState = mState;
+
+  //     // 带IMU的传感器要进行预积分
+  //     if ((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) && !mbCreatedMap)
+  //     {
+  // #ifdef REGISTER_TIMES
+  //         std::chrono::steady_clock::time_point time_StartPreIMU = std::chrono::steady_clock::now();
+  // #endif
+  //         PreintegrateIMU();
+  // #ifdef REGISTER_TIMES
+  //         std::chrono::steady_clock::time_point time_EndPreIMU = std::chrono::steady_clock::now();
+
+  //         double timePreImu = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndPreIMU - time_StartPreIMU).count();
+  //         vdIMUInteg_ms.push_back(timePreImu);
+  // #endif
+  //     }
+
+  // mbCreatedMap = false;
+
+  // // Get Map Mutex -> Map cannot be changed
+  // unique_lock<mutex> lock(pCurrentMap->mMutexMapUpdate);
+
+  // mbMapUpdated = false;
+
+  // int nCurMapChangeIndex = pCurrentMap->GetMapChangeIndex();
+  // int nMapChangeIndex = pCurrentMap->GetLastMapChange();
+  // if(nCurMapChangeIndex>nMapChangeIndex)
+  // {
+  //     pCurrentMap->SetLastMapChange(nCurMapChangeIndex);
+  //     mbMapUpdated = true;
+  // }
+
+  if (mState == NOT_INITIALIZED) {
+    StereoInitialization();
+
+    // mpFrameDrawer->Update(this);
+
+    if (mState != OK)  // If rightly initialized, mState=OK
+    {
+      mLastFrame = Frame(mCurrentFrame);
+      return;
+    }
+    // if(mpAtlas->GetAllMaps().size() == 1)
     // {
-    //     std::cout << "Tracking: Waiting to the next step" << std::endl;
-    //     while(!mbStep && bStepByStep)
-    //         usleep(500);
-    //     mbStep = false;
+    //     mnFirstFrameId = mCurrentFrame.mnId;
     // }
+  } else {
+    std::cout << "tracking ..." << std::endl;
+    // System is initialized. Track Frame.
+    bool bOK;
+    if (mState == OK) {
+      bOK = TrackWithMotionModel();
+    }
     
-    // // IMU挂了
-    // if(mpLocalMapper->mbBadImu)
-    // {
-    //     cout << "TRACK: Reset map because local mapper set the bad imu flag " << endl;
-    //     mpSystem->ResetActiveMap();
-    //     return;
-    // }
+    // 更新速度模型
+    if (bOK) {
+      // Update motion model
+      // 第一次进来时当前帧和上一帧是同一帧，速度相当于为0，也就是说第二帧优化初始值就是第一帧的位置
+      if (mLastFrame.isSet() && mCurrentFrame.isSet()) {
+        Sophus::SE3f LastTwc = mLastFrame.GetPose().inverse();
+        mVelocity = mCurrentFrame.GetPose() * LastTwc;
+        mbVelocity = true;
+      } else {
+        mbVelocity = false;
+      }
 
-    // // 拿到当前地图
-    // Map* pCurrentMap = mpAtlas->GetCurrentMap();
-    // if(!pCurrentMap)
-    // {
-    //     cout << "ERROR: There is not an active map in the atlas" << endl;
-    // }
+      // // Clean VO matches
+      // for(int i=0; i<mCurrentFrame.N; i++)
+      // {
+      //     MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
+      //     if(pMP)
+      //         if(pMP->Observations()<1)
+      //         {
+      //             mCurrentFrame.mvbOutlier[i] = false; // 如果没有被观测到这里就是false
+      //             mCurrentFrame.mvpMapPoints[i]=static_cast<MapPoint*>(NULL);
+      //         }
+      // }
 
-    // if(mState!=NO_IMAGES_YET)
-    // {
-    //     if(mLastFrame.mTimeStamp>mCurrentFrame.mTimeStamp)
-    //     {
-    //         cerr << "ERROR: Frame with a timestamp older than previous frame detected!" << endl;
-    //         unique_lock<mutex> lock(mMutexImuQueue);
-    //         mlQueueImuData.clear();
-    //         CreateMapInAtlas();
-    //         return;
-    //     }
-    //     else if(mCurrentFrame.mTimeStamp>mLastFrame.mTimeStamp+1.0)
-    //     {
-    //         // cout << mCurrentFrame.mTimeStamp << ", " << mLastFrame.mTimeStamp << endl;
-    //         // cout << "id last: " << mLastFrame.mnId << "    id curr: " << mCurrentFrame.mnId << endl;
-    //         if(mpAtlas->isInertial())
-    //         {
+      // // Delete temporal MapPoints
+      // for(list<MapPoint*>::iterator lit = mlpTemporalPoints.begin(), lend =  mlpTemporalPoints.end(); lit!=lend; lit++)
+      // {
+      //     MapPoint* pMP = *lit;
+      //     delete pMP;
+      // }
+      // mlpTemporalPoints.clear();
 
-    //             if(mpAtlas->isImuInitialized())
-    //             {
-    //                 cout << "Timestamp jump detected. State set to LOST. Reseting IMU integration..." << endl;
-    //                 if(!pCurrentMap->GetIniertialBA2())
-    //                 {
-    //                     mpSystem->ResetActiveMap();
-    //                 }
-    //                 else
-    //                 {
-    //                     CreateMapInAtlas();
-    //                 }
-    //             }
-    //             else
-    //             {
-    //                 cout << "Timestamp jump detected, before IMU initialization. Reseting..." << endl;
-    //                 mpSystem->ResetActiveMap();
-    //             }
-    //             return;
-    //         }
+      // bool bNeedKF = NeedNewKeyFrame();
 
-    //     }
-    // }
+      // // Check if we need to insert a new keyframe
+      // // if(bNeedKF && bOK)
+      // if(bNeedKF && (bOK || (mInsertKFsLost && mState==RECENTLY_LOST &&
+      //                        (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))))
+      //     CreateNewKeyFrame();
 
-
-    // if ((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) && mpLastKeyFrame)
-    //     mCurrentFrame.SetNewBias(mpLastKeyFrame->GetImuBias());
-
-    if(mState==NO_IMAGES_YET)
-    {
-        mState = NOT_INITIALIZED;
+      // // We allow points with high innovation (considererd outliers by the Huber Function)
+      // // pass to the new keyframe, so that bundle adjustment will finally decide
+      // // if they are outliers or not. We don't want next frame to estimate its position
+      // // with those points so we discard them in the frame. Only has effect if lastframe is tracked
+      // for(int i=0; i<mCurrentFrame.N;i++)
+      // {
+      //     if(mCurrentFrame.mvpMapPoints[i] && mCurrentFrame.mvbOutlier[i])
+      //         mCurrentFrame.mvpMapPoints[i]=static_cast<MapPoint*>(NULL);
+      // }
     }
-    // std::cout << "mstate: " << mState <<std::endl;
-    mLastProcessedState=mState;
-
-//     // 带IMU的传感器要进行预积分
-//     if ((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) && !mbCreatedMap)
-//     {
-// #ifdef REGISTER_TIMES
-//         std::chrono::steady_clock::time_point time_StartPreIMU = std::chrono::steady_clock::now();
-// #endif
-//         PreintegrateIMU();
-// #ifdef REGISTER_TIMES
-//         std::chrono::steady_clock::time_point time_EndPreIMU = std::chrono::steady_clock::now();
-
-//         double timePreImu = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndPreIMU - time_StartPreIMU).count();
-//         vdIMUInteg_ms.push_back(timePreImu);
-// #endif
-//     }
-
-    // mbCreatedMap = false;
-
-    // // Get Map Mutex -> Map cannot be changed
-    // unique_lock<mutex> lock(pCurrentMap->mMutexMapUpdate);
-
-    // mbMapUpdated = false;
-
-    // int nCurMapChangeIndex = pCurrentMap->GetMapChangeIndex();
-    // int nMapChangeIndex = pCurrentMap->GetLastMapChange();
-    // if(nCurMapChangeIndex>nMapChangeIndex)
-    // {
-    //     pCurrentMap->SetLastMapChange(nCurMapChangeIndex);
-    //     mbMapUpdated = true;
-    // }
-
-
-    if(mState==NOT_INITIALIZED)
-    {
-
-        StereoInitialization();
-        // std::cout << "size  : " << mLastFrame.mvpMapPoints.size() << std::endl;
-        // for(int i = 0; i < mLastFrame.mvpMapPoints.size(); i++){
-        //     ORB_SLAM3::MapPoint* p = mLastFrame.mvpMapPoints[i];
-        //     if(p){
-        //         auto pos = p->mnId;
-        //         std::cout << pos << std::endl;
-        //     }
-        // }
-        //mpFrameDrawer->Update(this);
-
-        if(mState!=OK) // If rightly initialized, mState=OK
-        {
-            mLastFrame = Frame(mCurrentFrame);
-            return;
-        }
-        // if(mpAtlas->GetAllMaps().size() == 1)
-        // {
-        //     mnFirstFrameId = mCurrentFrame.mnId;
-        // }
-    }
-    else
-    {
-        std::cout << "tracking ..." << std::endl;
-        // System is initialized. Track Frame.
-        bool bOK;
-        if(mState==OK){
-            bOK = TrackWithMotionModel();
-        }
-        
-
-        mLastFrame = Frame(mCurrentFrame);
-
-    }
+    mLastFrame = Frame(mCurrentFrame);
+  }
 }
 
 /**
  * @brief 立体视觉相机初始化(与单目相机不同)
  * 1. 设置初始位姿(有IMU时初始位姿不为零)
  * 2. 创建关键帧并插入地图集 (TODO)
- * 3. 为当前帧创建地图点 (TODO)
+ * 3. 为当前帧创建地图点
  */
-void Tracking::StereoInitialization()
-{
-    std::cout << "StereoInitialization:  " << mCurrentFrame.N << std::endl;
-    if(mCurrentFrame.N>500)
-    {
-        std::cout << "StereoInitializing..." << std::endl;
-        // if (mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
-        // {
-        //     if (!mCurrentFrame.mpImuPreintegrated || !mLastFrame.mpImuPreintegrated)
-        //     {
-        //         cout << "not IMU meas" << endl;
-        //         return;
-        //     }
+void Tracking::StereoInitialization() {
+  std::cout << "StereoInitialization:  " << mCurrentFrame.N << std::endl;
+  if (mCurrentFrame.N > 500) {
+    std::cout << "StereoInitializing..." << std::endl;
+    // if (mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
+    // {
+    //     if (!mCurrentFrame.mpImuPreintegrated || !mLastFrame.mpImuPreintegrated)
+    //     {
+    //         cout << "not IMU meas" << endl;
+    //         return;
+    //     }
 
-        //     if (!mFastInit && (mCurrentFrame.mpImuPreintegratedFrame->avgA-mLastFrame.mpImuPreintegratedFrame->avgA).norm()<0.5)
-        //     {
-        //         cout << "not enough acceleration" << endl;
-        //         return;
-        //     }
+    //     if (!mFastInit && (mCurrentFrame.mpImuPreintegratedFrame->avgA-mLastFrame.mpImuPreintegratedFrame->avgA).norm()<0.5)
+    //     {
+    //         cout << "not enough acceleration" << endl;
+    //         return;
+    //     }
 
-        //     if(mpImuPreintegratedFromLastKF)
-        //         delete mpImuPreintegratedFromLastKF;
+    //     if(mpImuPreintegratedFromLastKF)
+    //         delete mpImuPreintegratedFromLastKF;
 
-        //     mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(),*mpImuCalib);
-        //     mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
-        // }
+    //     mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(),*mpImuCalib);
+    //     mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
+    // }
 
-        // // Set Frame pose to the origin (In case of inertial SLAM to imu)
-        // if (mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
-        // {
-        //     Eigen::Matrix3f Rwb0 = mCurrentFrame.mImuCalib.mTcb.rotationMatrix();
-        //     Eigen::Vector3f twb0 = mCurrentFrame.mImuCalib.mTcb.translation();
-        //     Eigen::Vector3f Vwb0;
-        //     Vwb0.setZero();
-        //     mCurrentFrame.SetImuPoseVelocity(Rwb0, twb0, Vwb0);
-        // }
-        // else
-            mCurrentFrame.SetPose(Sophus::SE3f());
+    // // Set Frame pose to the origin (In case of inertial SLAM to imu)
+    // if (mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
+    // {
+    //     Eigen::Matrix3f Rwb0 = mCurrentFrame.mImuCalib.mTcb.rotationMatrix();
+    //     Eigen::Vector3f twb0 = mCurrentFrame.mImuCalib.mTcb.translation();
+    //     Eigen::Vector3f Vwb0;
+    //     Vwb0.setZero();
+    //     mCurrentFrame.SetImuPoseVelocity(Rwb0, twb0, Vwb0);
+    // }
+    // else
+    mCurrentFrame.SetPose(Sophus::SE3f());
 
-        // // Create KeyFrame
-        // KeyFrame* pKFini = new KeyFrame(mCurrentFrame,mpAtlas->GetCurrentMap(),mpKeyFrameDB);
+    // // Create KeyFrame
+    // KeyFrame* pKFini = new KeyFrame(mCurrentFrame,mpAtlas->GetCurrentMap(),mpKeyFrameDB);
 
-        // // Insert KeyFrame in the map
-        // mpAtlas->AddKeyFrame(pKFini);
+    // // Insert KeyFrame in the map
+    // mpAtlas->AddKeyFrame(pKFini);
 
-        // Create MapPoints and asscoiate to KeyFrame
-        if(!mpCamera2){ // RGBD相机
-            for(int i=0; i<mCurrentFrame.N;i++)
-            {
-                float z = mCurrentFrame.mvDepth[i];
-                if(z>0)
-                {
-                    Eigen::Vector3f x3D;
-                    mCurrentFrame.UnprojectStereo(i, x3D);
-                    // 这里是通过关键帧生成的地图点
-                    // MapPoint* pNewMP = new MapPoint(x3D, pKFini, mpAtlas->GetCurrentMap());
-                    // pNewMP->AddObservation(pKFini,i);
-                    // pKFini->AddMapPoint(pNewMP,i);
-                    // pNewMP->ComputeDistinctiveDescriptors();
-                    // pNewMP->UpdateNormalAndDepth();
-                    // mpAtlas->AddMapPoint(pNewMP);
-                    // 改成通过帧生成地图点
-                    MapPoint* pNewMP = new MapPoint(x3D, &mCurrentFrame, i);
-                    mCurrentFrame.mvpMapPoints[i]=pNewMP;
-                    // std::cout << "pos ..." << std::endl;
-                    // Eigen::Vector3f pos = pNewMP->GetWorldPos();
-                    // std::cout <<  pos(0) << std::endl;
-                }
-            }
-        } 
-        // else{ // 双目相机
-        //     for(int i = 0; i < mCurrentFrame.Nleft; i++){
-        //         int rightIndex = mCurrentFrame.mvLeftToRightMatch[i];
-        //         if(rightIndex != -1){
-        //             Eigen::Vector3f x3D = mCurrentFrame.mvStereo3Dpoints[i];
-
-        //             MapPoint* pNewMP = new MapPoint(x3D, pKFini, mpAtlas->GetCurrentMap());
-
-        //             pNewMP->AddObservation(pKFini,i);
-        //             pNewMP->AddObservation(pKFini,rightIndex + mCurrentFrame.Nleft);
-
-        //             pKFini->AddMapPoint(pNewMP,i);
-        //             pKFini->AddMapPoint(pNewMP,rightIndex + mCurrentFrame.Nleft);
-
-        //             pNewMP->ComputeDistinctiveDescriptors();
-        //             pNewMP->UpdateNormalAndDepth();
-        //             mpAtlas->AddMapPoint(pNewMP);
-
-        //             mCurrentFrame.mvpMapPoints[i]=pNewMP;
-        //             mCurrentFrame.mvpMapPoints[rightIndex + mCurrentFrame.Nleft]=pNewMP;
-        //         }
-        //     }
-        // }
-
-        // Verbose::PrintMess("New Map created with " + to_string(mpAtlas->MapPointsInMap()) + " points", Verbose::VERBOSITY_QUIET);
-
-        //cout << "Active map: " << mpAtlas->GetCurrentMap()->GetId() << endl;
-
-        // mpLocalMapper->InsertKeyFrame(pKFini);
-
-        mLastFrame = Frame(mCurrentFrame);
-        // mnLastKeyFrameId = mCurrentFrame.mnId;
-        // mpLastKeyFrame = pKFini;
-        //mnLastRelocFrameId = mCurrentFrame.mnId;
-
-        // mvpLocalKeyFrames.push_back(pKFini);
-        // mvpLocalMapPoints=mpAtlas->GetAllMapPoints();
-        // mpReferenceKF = pKFini;
-        // mCurrentFrame.mpReferenceKF = pKFini;
-
-        // mpAtlas->SetReferenceMapPoints(mvpLocalMapPoints);
-
-        // mpAtlas->GetCurrentMap()->mvpKeyFrameOrigins.push_back(pKFini);
-
-        // mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.GetPose());
-
-        mState=OK;
+    // Create MapPoints and asscoiate to KeyFrame
+    if (!mpCamera2) {  // RGBD相机
+      for (int i = 0; i < mCurrentFrame.N; i++) {
+        float z = mCurrentFrame.mvDepth[i];
+        if (z > 0) {
+          Eigen::Vector3f x3D;
+          mCurrentFrame.UnprojectStereo(i, x3D);
+          // 这里是通过关键帧生成的地图点
+          // MapPoint* pNewMP = new MapPoint(x3D, pKFini, mpAtlas->GetCurrentMap());
+          // pNewMP->AddObservation(pKFini,i);
+          // pKFini->AddMapPoint(pNewMP,i);
+          // pNewMP->ComputeDistinctiveDescriptors();
+          // pNewMP->UpdateNormalAndDepth();
+          // mpAtlas->AddMapPoint(pNewMP);
+          // 改成通过帧生成地图点
+          MapPoint* pNewMP = new MapPoint(x3D, &mCurrentFrame, i);
+          mCurrentFrame.mvpMapPoints[i] = pNewMP;
+        }
+      }
     }
-    
-}
+    // else{ // 双目相机
+    //     for(int i = 0; i < mCurrentFrame.Nleft; i++){
+    //         int rightIndex = mCurrentFrame.mvLeftToRightMatch[i];
+    //         if(rightIndex != -1){
+    //             Eigen::Vector3f x3D = mCurrentFrame.mvStereo3Dpoints[i];
 
+    //             MapPoint* pNewMP = new MapPoint(x3D, pKFini, mpAtlas->GetCurrentMap());
+
+    //             pNewMP->AddObservation(pKFini,i);
+    //             pNewMP->AddObservation(pKFini,rightIndex + mCurrentFrame.Nleft);
+
+    //             pKFini->AddMapPoint(pNewMP,i);
+    //             pKFini->AddMapPoint(pNewMP,rightIndex + mCurrentFrame.Nleft);
+
+    //             pNewMP->ComputeDistinctiveDescriptors();
+    //             pNewMP->UpdateNormalAndDepth();
+    //             mpAtlas->AddMapPoint(pNewMP);
+
+    //             mCurrentFrame.mvpMapPoints[i]=pNewMP;
+    //             mCurrentFrame.mvpMapPoints[rightIndex + mCurrentFrame.Nleft]=pNewMP;
+    //         }
+    //     }
+    // }
+
+    // Verbose::PrintMess("New Map created with " + to_string(mpAtlas->MapPointsInMap()) + " points", Verbose::VERBOSITY_QUIET);
+
+    // cout << "Active map: " << mpAtlas->GetCurrentMap()->GetId() << endl;
+
+    // mpLocalMapper->InsertKeyFrame(pKFini);
+
+    mLastFrame = Frame(mCurrentFrame);
+    // mnLastKeyFrameId = mCurrentFrame.mnId;
+    // mpLastKeyFrame = pKFini;
+    // mnLastRelocFrameId = mCurrentFrame.mnId;
+
+    // mvpLocalKeyFrames.push_back(pKFini);
+    // mvpLocalMapPoints=mpAtlas->GetAllMapPoints();
+    // mpReferenceKF = pKFini;
+    // mCurrentFrame.mpReferenceKF = pKFini;
+
+    // mpAtlas->SetReferenceMapPoints(mvpLocalMapPoints);
+
+    // mpAtlas->GetCurrentMap()->mvpKeyFrameOrigins.push_back(pKFini);
+
+    // mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.GetPose());
+
+    mState = OK;
+  }
+}
 
 // void Tracking::MonocularInitialization()
 // {
@@ -2069,8 +2071,6 @@ void Tracking::StereoInitialization()
 //     }
 // }
 
-
-
 // void Tracking::CreateInitialMapMonocular()
 // {
 //     // Create KeyFrames
@@ -2079,7 +2079,6 @@ void Tracking::StereoInitialization()
 
 //     if(mSensor == System::IMU_MONOCULAR)
 //         pKFini->mpImuPreintegrated = (IMU::Preintegrated*)(NULL);
-
 
 //     pKFini->ComputeBoW();
 //     pKFcur->ComputeBoW();
@@ -2114,7 +2113,6 @@ void Tracking::StereoInitialization()
 //         //Add to Map
 //         mpAtlas->AddMapPoint(pMP);
 //     }
-
 
 //     // Update Connections
 //     pKFini->UpdateConnections();
@@ -2167,7 +2165,6 @@ void Tracking::StereoInitialization()
 //         mpImuPreintegratedFromLastKF = new IMU::Preintegrated(pKFcur->mpImuPreintegrated->GetUpdatedBias(),pKFcur->mImuCalib);
 //     }
 
-
 //     mpLocalMapper->InsertKeyFrame(pKFini);
 //     mpLocalMapper->InsertKeyFrame(pKFcur);
 //     mpLocalMapper->mFirstTs=pKFcur->mTimeStamp;
@@ -2205,7 +2202,6 @@ void Tracking::StereoInitialization()
 
 //     initID = pKFcur->mnId;
 // }
-
 
 // void Tracking::CreateMapInAtlas()
 // {
@@ -2264,7 +2260,6 @@ void Tracking::StereoInitialization()
 //     }
 // }
 
-
 // bool Tracking::TrackReferenceKeyFrame()
 // {
 //     // Compute Bag of Words vector
@@ -2287,7 +2282,6 @@ void Tracking::StereoInitialization()
 //     mCurrentFrame.SetPose(mLastFrame.GetPose());
 
 //     //mCurrentFrame.PrintPointDistribution();
-
 
 //     // cout << " TrackReferenceKeyFrame mLastFrame.mTcw:  " << mLastFrame.mTcw << endl;
 //     Optimizer::PoseOptimization(&mCurrentFrame);
@@ -2331,199 +2325,186 @@ void Tracking::StereoInitialization()
  * 1. 位姿 Pose
  * 2. 特征点
  */
-void Tracking::UpdateLastFrame()
-{
-    // // Update pose according to reference keyframe
-    // KeyFrame* pRef = mLastFrame.mpReferenceKF;
-    // // 当前帧到参考关键帧的transform
-    // Sophus::SE3f Tlr = mlRelativeFramePoses.back();
-    // // 上一帧的Pose Tc1c0 * Tc0w = Tc1w
-    // mLastFrame.SetPose(Tlr * pRef->GetPose());
-    
-    // if(mnLastKeyFrameId==mLastFrame.mnId || mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR || !mbOnlyTracking)
-    //     return;
+void Tracking::UpdateLastFrame() {
+  // // Update pose according to reference keyframe
+  // KeyFrame* pRef = mLastFrame.mpReferenceKF;
+  // // 当前帧到参考关键帧的transform
+  // Sophus::SE3f Tlr = mlRelativeFramePoses.back();
+  // // 上一帧的Pose Tc1c0 * Tc0w = Tc1w
+  // mLastFrame.SetPose(Tlr * pRef->GetPose());
 
-    // Create "visual odometry" MapPoints
-    // We sort points according to their measured depth by the stereo/RGB-D sensor
-    //         深度值 特征点id
-    vector<pair<float,int> > vDepthIdx;
-    // 左目相机提取出的特征点数量
-    const int Nfeat = mCurrentFrame.N;
-    vDepthIdx.reserve(Nfeat);
-    for(int i=0; i<Nfeat;i++)
-    {
-        float z = mCurrentFrame.mvDepth[i];
-        if(z>0)
-        {
-            vDepthIdx.push_back(make_pair(z,i));
-        }
+  // if(mnLastKeyFrameId==mLastFrame.mnId || mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR || !mbOnlyTracking)
+  //     return;
+
+  // Create "visual odometry" MapPoints
+  // We sort points according to their measured depth by the stereo/RGB-D sensor
+  //         深度值 特征点id
+  vector<pair<float, int> > vDepthIdx;
+  // 左目相机提取出的特征点数量
+  const int Nfeat = mLastFrame.N;
+  vDepthIdx.reserve(Nfeat);
+  for (int i = 0; i < Nfeat; i++) {
+    float z = mLastFrame.mvDepth[i];
+    if (z > 0) {
+      vDepthIdx.push_back(make_pair(z, i));
     }
+  }
 
-    if(vDepthIdx.empty())
-        return;
+  if (vDepthIdx.empty()) return;
 
-    // 按照深度值排序
-    sort(vDepthIdx.begin(),vDepthIdx.end());
+  // 按照深度值排序
+  sort(vDepthIdx.begin(), vDepthIdx.end());
 
-    // 找到100个比较近的特征点
-    // We insert all close points (depth<mThDepth)
-    // If less than 100 close points, we insert the 100 closest ones.
-    int nPoints = 0;
-    for(size_t j=0; j<vDepthIdx.size();j++)
-    {
-        int i = vDepthIdx[j].second;
+  // 找到100个比较近的特征点
+  // We insert all close points (depth<mThDepth)
+  // If less than 100 close points, we insert the 100 closest ones.
+  int nPoints = 0;
+  for (size_t j = 0; j < vDepthIdx.size(); j++) {
+    int i = vDepthIdx[j].second;
 
-        bool bCreateNew = false;
+    bool bCreateNew = false;
 
-        // MapPoint* pMP = mLastFrame.mvpMapPoints[i];
+    // MapPoint* pMP = mLastFrame.mvpMapPoints[i];
 
-        // if(!pMP)
-            bCreateNew = true;
-        // else if(pMP->Observations()<1)
-        //     bCreateNew = true;
+    // if(!pMP)
+    bCreateNew = true;
+    // else if(pMP->Observations()<1)
+    //     bCreateNew = true;
 
-        // 是否要创建新的MapPoint
-        if(bCreateNew)
-        {
-            Eigen::Vector3f x3D;
-            // if(mLastFrame.Nleft == -1){
-                mCurrentFrame.UnprojectStereo(i, x3D);
-            // }
-            // else{
-            //     x3D = mLastFrame.UnprojectStereoFishEye(i);
-            // }
-            // x3D设置为worldpos
-            MapPoint* pNewMP = new MapPoint(x3D,&mCurrentFrame,i);
-            mCurrentFrame.mvpMapPoints[i]=pNewMP;
-            std::cout << "pos ..." << std::endl;
-            // Eigen::Vector3f pos = pNewMP->GetWorldPos();
-            // std::cout <<  pos(0) << std::endl;
+    // 是否要创建新的MapPoint
+    if (bCreateNew) {
+      Eigen::Vector3f x3D;
+      // if(mLastFrame.Nleft == -1){
+      mLastFrame.UnprojectStereo(i, x3D);
+      // }
+      // else{
+      //     x3D = mLastFrame.UnprojectStereoFishEye(i);
+      // }
+      // x3D设置为worldpos
+      MapPoint* pNewMP = new MapPoint(x3D, &mLastFrame, i);
+      mLastFrame.mvpMapPoints[i] = pNewMP;
+      std::cout << "pos ..." << std::endl;
+      // Eigen::Vector3f pos = pNewMP->GetWorldPos();
+      // std::cout <<  pos(0) << std::endl;
 
-            // mlpTemporalPoints.push_back(pNewMP);
-            nPoints++;
-        }
-        else
-        {
-            nPoints++;
-        }
-        // 终止条件
-        if(vDepthIdx[j].first>mThDepth && nPoints>100)
-            break;
-
+      // mlpTemporalPoints.push_back(pNewMP);
+      nPoints++;
+    } else {
+      nPoints++;
     }
+    // 终止条件
+    if (vDepthIdx[j].first > mThDepth && nPoints > 100) break;
+  }
 }
 
 /**
- * @brief 
+ * @brief
  * 1. 更新上一帧信息(补充地图点)
  * 2. 设置当前帧位姿(恒速模型)
  * 3. 特征点匹配(通过重投影缩小匹配范围，快速找到匹配特征点对)
- * 4. 位置优化(通过上一步匹配得到匹配成功的地图点，该地图点在当前帧里有对应的特征点像素坐标，该地图点重投影也可以得到一个像素坐标，这两个像素坐标之间的距离就是误差)
- *    优化图: 
+ * 4.
+ * 位置优化(通过上一步匹配得到匹配成功的地图点，该地图点在当前帧里有对应的特征点像素坐标，该地图点重投影也可以得到一个像素坐标，这两个像素坐标之间的距离就是误差)
+ *    优化图:
  *          顶点为相机位姿SE3
  *          误差边为上边求得的那个冲投影误差
  *    (相当于根据匹配到的特征点调整相机位姿)
  * PS: 1. 之后当前帧里的地图点只有上一帧投影过来，并且成功匹配的
  */
-bool Tracking::TrackWithMotionModel()
-{
-    // ORBmatcher matcher(0.9,true);
+bool Tracking::TrackWithMotionModel() {
+  ORBmatcher matcher(0.9, true);
 
-    // Update last frame pose according to its reference keyframe
-    // Create "visual odometry" points if in Localization Mode
-    mCurrentFrame.SetPose(Sophus::SE3f());
+  // Update last frame pose according to its reference keyframe
+  // Create "visual odometry" points if in Localization Mode
 
-    UpdateLastFrame();
-    
-    // // 根据IMU预测当前帧位姿
-    // if (mpAtlas->isImuInitialized() && (mCurrentFrame.mnId>mnLastRelocFrameId+mnFramesToResetIMU))
-    // {
-    //     // Predict state with IMU if it is initialized and it doesnt need reset
-    //     PredictStateIMU();
-    //     return true;
-    // }
-    // // 跟踪恒速模型预测当前帧位姿
-    // else{
-        // mCurrentFrame.SetPose(mVelocity * mLastFrame.GetPose());
-    // }
+  UpdateLastFrame();
 
+  // // 根据IMU预测当前帧位姿
+  // if (mpAtlas->isImuInitialized() && (mCurrentFrame.mnId>mnLastRelocFrameId+mnFramesToResetIMU))
+  // {
+  //     // Predict state with IMU if it is initialized and it doesnt need reset
+  //     PredictStateIMU();
+  //     return true;
+  // }
+  // // 跟踪恒速模型预测当前帧位姿
+  // else{
+  mCurrentFrame.SetPose(mVelocity * mLastFrame.GetPose());
+  // }
 
+  // 初始化地图点(地图点就是特征点的3D坐标)
+  fill(mCurrentFrame.mvpMapPoints.begin(), mCurrentFrame.mvpMapPoints.end(), static_cast<MapPoint*>(NULL));
 
-    // 初始化地图点(地图点就是特征点的3D坐标)
-    // fill(mCurrentFrame.mvpMapPoints.begin(),mCurrentFrame.mvpMapPoints.end(),static_cast<MapPoint*>(NULL));
+  // Project points seen in previous frame
+  int th;
 
-    // Project points seen in previous frame
-    int th;
+  // if(mSensor==System::STEREO)
+  //     th=7;
+  // else
+  th = 15;
 
-    // if(mSensor==System::STEREO)
-    //     th=7;
-    // else
-    th=15;
+  // // 特征点匹配(根据前一帧的MapPoints重投影，然后在投影点的一定范围内进行ORB特征匹配，生成当前帧的MapPoints)
+  //   int nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
 
-    // // 特征点匹配(根据前一帧的MapPoints重投影，然后在投影点的一定范围内进行ORB特征匹配，生成当前帧的MapPoints)
-    // int nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
+  // // If few matches, uses a wider window search
+  // if(nmatches<20)
+  // {
+  //     Verbose::PrintMess("Not enough matches, wider window search!!", Verbose::VERBOSITY_NORMAL);
+  //     fill(mCurrentFrame.mvpMapPoints.begin(),mCurrentFrame.mvpMapPoints.end(),static_cast<MapPoint*>(NULL));
 
-    // // If few matches, uses a wider window search
-    // if(nmatches<20)
-    // {
-    //     Verbose::PrintMess("Not enough matches, wider window search!!", Verbose::VERBOSITY_NORMAL);
-    //     fill(mCurrentFrame.mvpMapPoints.begin(),mCurrentFrame.mvpMapPoints.end(),static_cast<MapPoint*>(NULL));
+  //     nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,2*th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
+  //     Verbose::PrintMess("Matches with wider search: " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
 
-    //     nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,2*th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
-    //     Verbose::PrintMess("Matches with wider search: " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
+  // }
 
-    // }
+  // if(nmatches<20)
+  // {
+  //     Verbose::PrintMess("Not enough matches!!", Verbose::VERBOSITY_NORMAL);
+  //     if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
+  //         return true;
+  //     else
+  //         return false;
+  // }
 
-    // if(nmatches<20)
-    // {
-    //     Verbose::PrintMess("Not enough matches!!", Verbose::VERBOSITY_NORMAL);
-    //     if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
-    //         return true;
-    //     else
-    //         return false;
-    // }
+  // // Optimize frame pose with all matches
+  // Optimizer::PoseOptimization(&mCurrentFrame);
 
-    // // Optimize frame pose with all matches
-    // Optimizer::PoseOptimization(&mCurrentFrame);
+  // // 优化时会有内点、外点的区分，这里把被判断为外点的那些点都剔除
+  // // Discard outliers
+  // int nmatchesMap = 0;
+  // for(int i =0; i<mCurrentFrame.N; i++)
+  // {
+  //     if(mCurrentFrame.mvpMapPoints[i])
+  //     {
+  //         if(mCurrentFrame.mvbOutlier[i]) // 如果是外点
+  //         {
+  //             MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
 
-    // // 优化时会有内点、外点的区分，这里把被判断为外点的那些点都剔除
-    // // Discard outliers
-    // int nmatchesMap = 0;
-    // for(int i =0; i<mCurrentFrame.N; i++)
-    // {
-    //     if(mCurrentFrame.mvpMapPoints[i])
-    //     {
-    //         if(mCurrentFrame.mvbOutlier[i]) // 如果是外点
-    //         {
-    //             MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
+  //             mCurrentFrame.mvpMapPoints[i]=static_cast<MapPoint*>(NULL);
+  //             mCurrentFrame.mvbOutlier[i]=false;
+  //             if(i < mCurrentFrame.Nleft){
+  //                 pMP->mbTrackInView = false;
+  //             }
+  //             else{
+  //                 pMP->mbTrackInViewR = false;
+  //             }
+  //             pMP->mnLastFrameSeen = mCurrentFrame.mnId;
+  //             nmatches--;
+  //         }
+  //         else if(mCurrentFrame.mvpMapPoints[i]->Observations()>0)
+  //             nmatchesMap++;
+  //     }
+  // }
 
-    //             mCurrentFrame.mvpMapPoints[i]=static_cast<MapPoint*>(NULL);
-    //             mCurrentFrame.mvbOutlier[i]=false;
-    //             if(i < mCurrentFrame.Nleft){
-    //                 pMP->mbTrackInView = false;
-    //             }
-    //             else{
-    //                 pMP->mbTrackInViewR = false;
-    //             }
-    //             pMP->mnLastFrameSeen = mCurrentFrame.mnId;
-    //             nmatches--;
-    //         }
-    //         else if(mCurrentFrame.mvpMapPoints[i]->Observations()>0)
-    //             nmatchesMap++;
-    //     }
-    // }
+  // if(mbOnlyTracking)
+  // {
+  //     mbVO = nmatchesMap<10;
+  //     return nmatches>20;
+  // }
 
-    // if(mbOnlyTracking)
-    // {
-    //     mbVO = nmatchesMap<10;
-    //     return nmatches>20;
-    // }
-
-    // if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
-    //     return true;
-    // else
-    //     return nmatchesMap>=10;
-    return true;
+  // if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
+  //     return true;
+  // else
+  //     return nmatchesMap>=10;
+  return true;
 }
 
 // /**
@@ -2556,7 +2537,7 @@ bool Tracking::TrackWithMotionModel()
 //             if(mCurrentFrame.mvbOutlier[i])
 //                 aux2++;
 //         }
-    
+
 //     /**     3       **/
 //     // 这里我们没有使用IMU
 //     int inliers;
@@ -2627,7 +2608,6 @@ bool Tracking::TrackWithMotionModel()
 //     if((mnMatchesInliers>10)&&(mState==RECENTLY_LOST))
 //         return true;
 
-
 //     if (mSensor == System::IMU_MONOCULAR)
 //     {
 //         if((mnMatchesInliers<15 && mpAtlas->isImuInitialized())||(mnMatchesInliers<50 && !mpAtlas->isImuInitialized()))
@@ -2657,7 +2637,8 @@ bool Tracking::TrackWithMotionModel()
 
 // bool Tracking::NeedNewKeyFrame()
 // {
-//     if((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) && !mpAtlas->GetCurrentMap()->isImuInitialized())
+//     if((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) &&
+//     !mpAtlas->GetCurrentMap()->isImuInitialized())
 //     {
 //         if (mSensor == System::IMU_MONOCULAR && (mCurrentFrame.mTimeStamp-mpLastKeyFrame->mTimeStamp)>=0.25)
 //             return true;
@@ -2714,7 +2695,8 @@ bool Tracking::TrackWithMotionModel()
 
 //             }
 //         }
-//         //Verbose::PrintMess("[NEEDNEWKF]-> closed points: " + to_string(nTrackedClose) + "; non tracked closed points: " + to_string(nNonTrackedClose), Verbose::VERBOSITY_NORMAL);// Verbose::VERBOSITY_DEBUG);
+//         //Verbose::PrintMess("[NEEDNEWKF]-> closed points: " + to_string(nTrackedClose) + "; non tracked closed points: " +
+//         to_string(nNonTrackedClose), Verbose::VERBOSITY_NORMAL);// Verbose::VERBOSITY_DEBUG);
 //     }
 
 //     bool bNeedToInsertClose;
@@ -2751,7 +2733,8 @@ bool Tracking::TrackWithMotionModel()
 //     // Condition 1b: More than "MinFrames" have passed and Local Mapping is idle
 //     const bool c1b = ((mCurrentFrame.mnId>=mnLastKeyFrameId+mMinFrames) && bLocalMappingIdle); //mpLocalMapper->KeyframesInQueue() < 2);
 //     //Condition 1c: tracking is weak
-//     const bool c1c = mSensor!=System::MONOCULAR && mSensor!=System::IMU_MONOCULAR && mSensor!=System::IMU_STEREO && mSensor!=System::IMU_RGBD && (mnMatchesInliers<nRefMatches*0.25 || bNeedToInsertClose) ;
+//     const bool c1c = mSensor!=System::MONOCULAR && mSensor!=System::IMU_MONOCULAR && mSensor!=System::IMU_STEREO && mSensor!=System::IMU_RGBD &&
+//     (mnMatchesInliers<nRefMatches*0.25 || bNeedToInsertClose) ;
 //     // Condition 2: Few tracked points compared to reference keyframe. Lots of visual odometry compared to map matches.
 //     const bool c2 = (((mnMatchesInliers<nRefMatches*thRefRatio || bNeedToInsertClose)) && mnMatchesInliers>15);
 
@@ -2773,7 +2756,8 @@ bool Tracking::TrackWithMotionModel()
 //     }
 
 //     bool c4 = false;
-//     if ((((mnMatchesInliers<75) && (mnMatchesInliers>15)) || mState==RECENTLY_LOST) && (mSensor == System::IMU_MONOCULAR)) // MODIFICATION_2, originally ((((mnMatchesInliers<75) && (mnMatchesInliers>15)) || mState==RECENTLY_LOST) && ((mSensor == System::IMU_MONOCULAR)))
+//     if ((((mnMatchesInliers<75) && (mnMatchesInliers>15)) || mState==RECENTLY_LOST) && (mSensor == System::IMU_MONOCULAR)) // MODIFICATION_2,
+//     originally ((((mnMatchesInliers<75) && (mnMatchesInliers>15)) || mState==RECENTLY_LOST) && ((mSensor == System::IMU_MONOCULAR)))
 //         c4=true;
 //     else
 //         c4=false;
@@ -2872,7 +2856,7 @@ bool Tracking::TrackWithMotionModel()
 //         {
 //             // Step 3.2：按照深度从小到大排序
 //             sort(vDepthIdx.begin(),vDepthIdx.end());
-//             // Step 3.3：从中找出不是地图点的生成临时地图点 
+//             // Step 3.3：从中找出不是地图点的生成临时地图点
 //             int nPoints = 0;
 //             for(size_t j=0; j<vDepthIdx.size();j++)
 //             {
@@ -2946,7 +2930,7 @@ bool Tracking::TrackWithMotionModel()
 // }
 
 // /**
-//  * @brief 
+//  * @brief
 //  * 1. 遍历地图点，判断是否在当前帧视野内
 //  * 2. 如果在，则把该地图点投影到当前帧里，并找到最匹配的特征点，更新这个特征点对应的地图点
 //  * 1. 遍历当前帧的地图点(这些地图点是从上一帧重投影过来的，是经过特征匹配的)
@@ -3074,7 +3058,7 @@ bool Tracking::TrackWithMotionModel()
 // /**
 //  * @brief 这里生成了 mvpLocalKeyFrames ， 里边存放的是和当前帧有共视关系的关键帧.(共视关系指：看到相同的地图点)
 //  * 1. 遍历所有地图点，得到观测到此地图点的关键帧，因为有很多地图点，所以一个关键帧可能观测到很多地图点
-//  * 2. 遍历所有挑选出来的关键帧，放到 mvpLocalKeyFrames 里，并找到一个和当前帧共视程度最高的关键帧 pKFmax 
+//  * 2. 遍历所有挑选出来的关键帧，放到 mvpLocalKeyFrames 里，并找到一个和当前帧共视程度最高的关键帧 pKFmax
 //  * 3. 遍历所有 mvpLocalKeyFrames ， 把其中关键帧的临近关键帧也放到里 (这个临近关键帧是通过最小生成树来维护的)
 //  * 4. 把共视程度最高的关键帧 pKFmax 作为当前帧的参考关键帧
 //  */
@@ -3167,7 +3151,6 @@ bool Tracking::TrackWithMotionModel()
 
 //         // 拿出这个关键帧的10个临近关键帧，把这些临近的也放到局部关键帧里
 //         const vector<KeyFrame*> vNeighs = pKF->GetBestCovisibilityKeyFrames(10);
-
 
 //         for(vector<KeyFrame*>::const_iterator itNeighKF=vNeighs.begin(), itEndNeighKF=vNeighs.end(); itNeighKF!=itEndNeighKF; itNeighKF++)
 //         {
@@ -3383,7 +3366,6 @@ bool Tracking::TrackWithMotionModel()
 //                     }
 //                 }
 
-
 //                 // If the pose is supported by enough inliers stop ransacs and continue
 //                 if(nGood>=50)
 //                 {
@@ -3425,7 +3407,6 @@ bool Tracking::TrackWithMotionModel()
 //         mpLocalMapper->RequestReset();
 //         Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
 //     }
-
 
 //     // Reset Loop Closing
 //     Verbose::PrintMess("Reseting Loop Closing...", Verbose::VERBOSITY_NORMAL);
@@ -3499,7 +3480,6 @@ bool Tracking::TrackWithMotionModel()
 
 //     // Clear Map (this erase MapPoints and KeyFrames)
 //     mpAtlas->clearMap();
-
 
 //     //KeyFrame::nNextId = mpAtlas->GetLastInitKFid();
 //     //Frame::nNextId = mnLastInitFrameId;
@@ -3644,7 +3624,6 @@ bool Tracking::TrackWithMotionModel()
 //         usleep(500);
 //     }
 
-
 //     if(mLastFrame.mnId == mLastFrame.mpLastKeyFrame->mnFrameId)
 //     {
 //         mLastFrame.SetImuPoseVelocity(mLastFrame.mpLastKeyFrame->GetImuRotation(),
@@ -3754,4 +3733,4 @@ bool Tracking::TrackWithMotionModel()
 // }
 // #endif
 
-} //namespace ORB_SLAM
+}  // namespace ORB_SLAM3

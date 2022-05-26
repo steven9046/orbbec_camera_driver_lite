@@ -123,7 +123,7 @@ public:
     // bool imuIsPreintegrated();
     // void setIntegrated();
 
-    // bool isSet() const;
+    bool isSet() const;
 
     // Computes rotation, translation and camera center matrices from the camera pose.
     void UpdatePoseMatrices();

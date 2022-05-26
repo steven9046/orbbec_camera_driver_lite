@@ -101,3 +101,10 @@
     * a. 修复了Frame拷贝构造函数里没有复制 pCamera , mvpMapPoints 的bug
     * b. 因为流程不同，我们这里 UpdateLastFrame 里其实是给 currentFrame 生成地图点
     * c. 激活viewer线程，显示地图点
+
+## v1.2.4 @2022.5.26 ##
+* 1. 激活恒速模型，为帧间追踪做准备
+* 2. UpdateLastFrame 恢复为给 LastFrame 创建地图点
+* 3. 添加 ORBmatcher
+    * a. 这里用到了 SearchByProjection 把相关函数都激活
+    * b. 双目相机时会对右目进行匹配，这里删掉了

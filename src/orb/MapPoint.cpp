@@ -305,14 +305,14 @@ Eigen::Vector3f MapPoint::GetWorldPos() {
 //     mpMap->EraseMapPoint(this);
 // }
 
-// bool MapPoint::isBad()
-// {
-//     unique_lock<mutex> lock1(mMutexFeatures,std::defer_lock);
-//     unique_lock<mutex> lock2(mMutexPos,std::defer_lock);
-//     lock(lock1, lock2);
+bool MapPoint::isBad()
+{
+    // unique_lock<mutex> lock1(mMutexFeatures,std::defer_lock);
+    // unique_lock<mutex> lock2(mMutexPos,std::defer_lock);
+    // lock(lock1, lock2);
 
-//     return mbBad;
-// }
+    return mbBad;
+}
 
 // void MapPoint::IncreaseVisible(int n)
 // {

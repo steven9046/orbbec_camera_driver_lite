@@ -73,7 +73,7 @@ public:
     // bool IsInKeyFrame(KeyFrame* pKF);
 
     // void SetBadFlag();
-    // bool isBad();
+    bool isBad();
 
     // void Replace(MapPoint* pMP);    
     // MapPoint* GetReplaced();
