@@ -46,7 +46,7 @@ namespace ORB_SLAM3 {
  * @param[in] pKFDB         关键帧数据库
  * 1. 加载配置文件，初始化一些相关数据结构
  */
-Tracking::Tracking(Settings* settings)
+Tracking::Tracking(Settings* settings, MapDrawer *pMapDrawer)
     : mState(NO_IMAGES_YET),  // 初始状态为无图像
       mTrackedFr(0),          // 跟踪到的帧数
       mbStep(false),
@@ -56,6 +56,7 @@ Tracking::Tracking(Settings* settings)
       mnInitialFrameId(0),
       mnFirstFrameId(0),
       mbOnlyTracking(false),
+      mpMapDrawer(pMapDrawer), 
       mpCamera2(nullptr) {
   // 1. 加载配置文件
   // Load camera parameters from settings file
@@ -1887,6 +1888,8 @@ void Tracking::Track() {
     }
     mLastFrame = Frame(mCurrentFrame);
   }
+  if(mCurrentFrame.isSet())
+    mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.GetPose());
 }
 
 /**

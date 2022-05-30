@@ -152,3 +152,14 @@
                      附加一个在模拟出来的双目里的x坐标差值 ( mvuRight 里保存的那个值)
 * 8. 修改了 TrackReferenceKeyFrame 里关于判定为外点的 MapPoint 的观测性质，因为地图等元素还没加入，这些性质不起作用
     
+## v1.2.5 @2022.5.30 ##
+* 1. 添加 MapDrawer 显示Frame位姿
+    * a. 通过 SetCurrentCameraPose 在 tracking 线程里改变 mCameraPose
+    * b. 通过 GetCurrentOpenGLCameraMatrix 在 viewer 线程里读出 mCameraPose
+    * c. 通过 DrawCurrentCamera 在 viewer 里把 mCameraPose 画出来
+    如果只画 Frame 可以不用 GetCamera pose 的，他是做了视角跟踪之类的东西，需要这个
+    * d. ORB_SLAM3里在单双目初始化、track()结尾分别set了相机的位姿
+* 2. 实验现象：
+    * a. 不稳定，会突然跳到很远的地方，应该是因为没有帧间约束的原因(所以现在根本不是VO，纯靠重投影优化修正位姿)
+    * b. 无法区分相对运动，有人走过的时候相机会认为自己动了
+    * c. 需要固定视角，标出xyz方向

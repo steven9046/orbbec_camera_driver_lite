@@ -18,10 +18,12 @@
 
 #include <pthread.h>
 #include <viewer.h>
+#include "orb/MapDrawer.h"
 
 namespace viewer {
 
-Viewer::Viewer(int height, int width, std::string name) {
+Viewer::Viewer(int height, int width, std::string name, ORB_SLAM3::MapDrawer* pMapDrawer) : mpMapDrawer(pMapDrawer)
+{
   window_height_ = height;
   window_width_ = width;
   window_name_ = name;
@@ -70,8 +72,13 @@ void Viewer::run() {
   // pangolin::Var<double> now_yaw("menu.now_yaw",0);
   // pangolin::Var<double> plan_yaw("menu.plan_yaw",0);
   // pangolin::Var<double> now_plan_yaw("menu.now_plan_yaw",0);
+    pangolin::OpenGlMatrix Twc, Twr;
+    Twc.SetIdentity();
+    pangolin::OpenGlMatrix Ow; // Oriented with g in the z axis
+    Ow.SetIdentity();
 
   while (!pangolin::ShouldQuit()) {
+    mpMapDrawer->GetCurrentOpenGLCameraMatrix(Twc,Ow);
     // Clear screen and activate view to render into
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     d_cam.Activate(s_cam);
@@ -93,6 +100,7 @@ void Viewer::run() {
       glVertex3d(point_cloud_->points[i].x, point_cloud_->points[i].y, point_cloud_->points[i].z);
       glEnd();
     }
+    mpMapDrawer->DrawCurrentCamera(Twc);
     // Swap frames and Process Events
     pangolin::FinishFrame();
   }

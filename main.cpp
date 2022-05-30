@@ -44,6 +44,7 @@
 #include "src/orb/Frame.h"
 #include "src/orb/Tracking.h"
 #include "src/orb/Settings.h"
+#include "src/orb/MapDrawer.h"
 
 /*** Macro ***/
 #define WORK_DIR RESOURCE_DIR
@@ -79,13 +80,8 @@ int main(int argc, char** argv) {
   oni_camera.getCameraParams();
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr mapPoints = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
-  #ifdef LINUX_X86
-    // Viewer for point cloud
-    viewer::Viewer main_viewer(480, 640, "pcl");
-    main_viewer.setInputCloud(mapPoints);
-    std::thread display_loop;
-    display_loop = std::thread(&viewer::Viewer::run, &main_viewer);
-  #endif
+
+
 
   // /* Initialize image processor library */
   // ImageProcessor::InputParam input_param = {WORK_DIR, 4};
@@ -131,8 +127,18 @@ int main(int argc, char** argv) {
         std::cout << (*settings_) << std::endl;
     }
 
-  // 这里创建一个 tracker, 因为没有加载配置文件，这里直接默认构造
-  ORB_SLAM3::Tracking tracker(settings_);
+  // 创建一个画图
+  ORB_SLAM3::MapDrawer mpMapDrawer(strSettingsFile, settings_);
+  // 创建一个 tracker
+  ORB_SLAM3::Tracking tracker(settings_, &mpMapDrawer);
+
+
+    // Viewer for point cloud
+    viewer::Viewer main_viewer(480, 640, "pcl", &mpMapDrawer);
+    main_viewer.setInputCloud(mapPoints);
+    std::thread display_loop;
+    display_loop = std::thread(&viewer::Viewer::run, &main_viewer);
+
   /*** Process for each frame ***/
   int32_t frame_cnt = 0;
   cv::namedWindow("raw_depth", 0);

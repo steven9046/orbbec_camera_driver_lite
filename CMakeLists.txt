@@ -79,6 +79,7 @@ add_executable(orbbec_camera_driver
                 src/orb/CameraModels/GeometricTools.cpp
                 src/orb/CameraModels/TwoViewReconstruction.cpp
                 src/orb/CameraModels/Pinhole.cpp
+                src/orb/MapDrawer.cpp
                 main.cpp
                 )
 # # For InferenceHelper

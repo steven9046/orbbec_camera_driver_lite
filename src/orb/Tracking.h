@@ -32,7 +32,7 @@
 // #include "ORBVocabulary.h"
 // #include "KeyFrameDatabase.h"
 #include "ORBextractor.h"
-// #include "MapDrawer.h"
+#include "MapDrawer.h"
 // #include "System.h"
 // #include "ImuTypes.h"
 #include "Settings.h"
@@ -60,7 +60,7 @@ class Tracking
 
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    Tracking(Settings* settings);
+    Tracking(Settings* settings, MapDrawer *pMapDrawer);
 
     ~Tracking();
 
@@ -263,7 +263,7 @@ protected:
     // //Drawers
     // Viewer* mpViewer;
     // FrameDrawer* mpFrameDrawer;
-    // MapDrawer* mpMapDrawer;
+    MapDrawer* mpMapDrawer;
     bool bStepByStep;
 
     // //Atlas

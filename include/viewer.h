@@ -19,13 +19,14 @@
 #include <pangolin/pangolin.h> 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-
+#include "orb/MapDrawer.h"
 namespace viewer{
+
 class Viewer {
 public:    
     Viewer();
     ~Viewer();
-    Viewer(int height, int width, std::string name);
+    Viewer(int height, int width, std::string name, ORB_SLAM3::MapDrawer* pMapDrawer);
     void setup();
     void setWindowName(std::string name);
     void setInputCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud);
@@ -33,5 +34,6 @@ public:
     std::string window_name_;
     int window_height_, window_width_;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud_;
+    ORB_SLAM3::MapDrawer* mpMapDrawer;
 };
 }
