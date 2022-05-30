@@ -82,9 +82,11 @@ void Viewer::run() {
     // Clear screen and activate view to render into
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     d_cam.Activate(s_cam);
+    // s_cam.Follow(Twc);
+    s_cam.Follow(Ow);
     // pangolin::glDrawColouredCube();  //画三维方块
     //线条长度
-    pangolin::glDrawAxis(2);  //三维坐标轴，红——x轴，绿——y轴，蓝——z轴
+    pangolin::glDrawAxis(0.1);  //三维坐标轴，红——x轴，绿——y轴，蓝——z轴
     // // 画map
     // for (int i = 0; i < 64000; i++) {
     //   glColor3f(0.0f, 1.0f, 0.0f);
