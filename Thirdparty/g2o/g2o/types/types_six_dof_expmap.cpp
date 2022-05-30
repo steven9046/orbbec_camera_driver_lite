@@ -335,7 +335,10 @@ Vector2d EdgeSE3ProjectXYZOnlyPose::cam_project(const Vector3d & trans_xyz) cons
   return res;
 }
 
-
+/**
+ * @brief 3D 地图点坐标投影到像素坐标
+ * 
+ */
 Vector3d EdgeStereoSE3ProjectXYZOnlyPose::cam_project(const Vector3d & trans_xyz) const{
   const float invz = 1.0f/trans_xyz[2];
   Vector3d res;

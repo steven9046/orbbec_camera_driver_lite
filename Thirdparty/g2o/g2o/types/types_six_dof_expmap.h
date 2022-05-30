@@ -218,6 +218,10 @@ public:
   void computeError()  {
     const VertexSE3Expmap* v1 = static_cast<const VertexSE3Expmap*>(_vertices[0]);
     Vector3d obs(_measurement);
+    //                           estimate 是一个 SE3Quat  .map  就是把一个 SE3Quat 作用在 Xw 上
+    //                         v1的 estimate 是 setEstimate时赋值的，这里就是帧的位姿
+    //                          那么这么一堆就是把相机坐标系里的3D地图点坐标变到世界坐标系里
+    //                          再调用 cam_project投影成三个数
     _error = obs - cam_project(v1->estimate().map(Xw));
   }
 

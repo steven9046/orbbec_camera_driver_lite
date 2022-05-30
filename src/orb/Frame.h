@@ -49,7 +49,7 @@ namespace ORB_SLAM3
 class MapPoint;
 // class KeyFrame;
 // class ConstraintPoseImu;
-// class GeometricCamera;
+class GeometricCamera;
 class ORBextractor;
 
 class Frame
@@ -106,7 +106,7 @@ public:
     // Compute the cell of a keypoint (return false if outside the grid)
     bool PosInGrid(const cv::KeyPoint &kp, int &posX, int &posY);
 
-    // vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel=-1, const int maxLevel=-1, const bool bRight = false) const;
+    vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel=-1, const int maxLevel=-1, const bool bRight = false) const;
 
     // Search a match for each keypoint in the left image to a keypoint in the right image.
     // If there is a match, depth is computed and the right coordinate associated to the left keypoint is stored.
@@ -241,12 +241,13 @@ public:
 
     // MapPoints associated to keypoints, NULL pointer if no association.
     // Flag to identify outlier associations.
-    // std::vector<bool> mvbOutlier;
+    std::vector<bool> mvbOutlier;
     // int mnCloseMPs;
 
     // Keypoints are assigned to cells in a grid to reduce matching complexity when projecting MapPoints.
     static float mfGridElementWidthInv;
     static float mfGridElementHeightInv;
+    // 每个grid里存的是一个装了很多关键点索引的vector
     std::vector<std::size_t> mGrid[FRAME_GRID_COLS][FRAME_GRID_ROWS];
 
     // IMU::Bias mPredBias;

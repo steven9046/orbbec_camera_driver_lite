@@ -87,7 +87,7 @@ public:
 
     // void ComputeDistinctiveDescriptors();
 
-    // cv::Mat GetDescriptor();
+    cv::Mat GetDescriptor();
 
     // void UpdateNormalAndDepth();
 
@@ -118,11 +118,13 @@ public:
     // float mTrackDepthR;
     // float mTrackProjXR;
     // float mTrackProjYR;
-    // bool mbTrackInView, mbTrackInViewR;
+    // 是否在重投影优化时被确认为内点了
+    bool mbTrackInView, mbTrackInViewR;
     // int mnTrackScaleLevel, mnTrackScaleLevelR;
     // float mTrackViewCos, mTrackViewCosR;
     // long unsigned int mnTrackReferenceForFrame;
-    // long unsigned int mnLastFrameSeen;
+    // 最后一次观测到这个地图点的帧
+    long unsigned int mnLastFrameSeen;
 
     // // Variables used by local mapping
     // long unsigned int mnBALocalForKF;

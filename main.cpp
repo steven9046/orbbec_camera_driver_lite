@@ -95,8 +95,6 @@ int main(int argc, char** argv) {
 
   /* Initialize orb extractor */
 
-  // ORB_SLAM3::ORBextractor ORB_extractor(NFEATURES, SCALEFACTOR, NLEVELS, NTHRESH_INI, NTHRESH_MIN);
-
   // 相机内参
   cv::Mat K = cv::Mat::eye(3, 3, CV_32F);
   K.at<float>(0, 0) = oni_camera.cameraParams_.r_intr_p[0];
@@ -188,14 +186,14 @@ int main(int argc, char** argv) {
       pcl::PointXYZRGB invalid_point;
       invalid_point.x = invalid_point.y = invalid_point.z = std::numeric_limits<float>::quiet_NaN();
       invalid_point.r = invalid_point.g = invalid_point.b = 0;  // black
-      std::cout <<  tracker.mLastFrame.mvpMapPoints.size()<< std::endl;
+      // std::cout << "mapPoints in last frame :" << tracker.mLastFrame.mvpMapPoints.size()<< std::endl;
       for(int i = 0; i < tracker.mLastFrame.mvpMapPoints.size(); i++){
         ORB_SLAM3::MapPoint* p = tracker.mLastFrame.mvpMapPoints[i];
         if(p){
           Eigen::Vector3f pos = p->GetWorldPos();
-          point.x = pos(0) * 0.001 ;
-          point.y = pos(1) * 0.001 ;
-          point.z = pos(2) * 0.001 ;
+          point.x = pos(0);
+          point.y = pos(1);
+          point.z = pos(2);
           // std::cout << point.x << " "<< point.y << " " << point.z << std::endl;
           point.r = 255;
           point.g = 255;
@@ -203,7 +201,7 @@ int main(int argc, char** argv) {
           mapPoints->points.emplace_back(point);
         }
       }
-      std::cout << "points : " <<  mapPoints->points.size() << std::endl;
+      // std::cout << "points in viewer: " <<  mapPoints->points.size() << std::endl;
       cv::imshow("rgb_img", image_for_show);
       cv::waitKey(1);
     }

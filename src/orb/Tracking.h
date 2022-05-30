@@ -88,8 +88,7 @@ public:
 //     void InformOnlyTracking(const bool &flag);
 
 //     void UpdateFrameIMU(const float s, const IMU::Bias &b, KeyFrame* pCurrentKeyFrame);
-//     KeyFrame* 
-//     ()
+//     KeyFrame* GetLastKeyFrame()
 //     {
 //         return mpLastKeyFrame;
 //     }
@@ -206,7 +205,7 @@ protected:
     // void CreateInitialMapMonocular();
 
     // void CheckReplacedInLastFrame();
-    // bool TrackReferenceKeyFrame();
+    bool TrackReferenceKeyFrame();
     void UpdateLastFrame();
     bool TrackWithMotionModel();
     // bool PredictStateIMU();

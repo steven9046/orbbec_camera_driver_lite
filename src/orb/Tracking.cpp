@@ -22,7 +22,7 @@
 // #include "FrameDrawer.h"
 // #include "Converter.h"
 // #include "G2oTypes.h"
-// #include "Optimizer.h"
+#include "Optimizer.h"
 // #include "Pinhole.h"
 // #include "KannalaBrandt8.h"
 // #include "MLPnPsolver.h"
@@ -591,9 +591,9 @@ void Tracking::newParameterLoader(Settings* settings) {
   // }
 
   // if(mSensor==System::STEREO || mSensor==System::RGBD || mSensor==System::IMU_STEREO || mSensor==System::IMU_RGBD ){
-  //     // 应该是基线
-  //     mbf = settings->bf();
-  //     mThDepth = settings->b() * settings->thDepth();
+      // 应该是基线
+      mbf = settings->bf();
+      mThDepth = settings->b() * settings->thDepth();
   // }
 
   // 如果是RGBD相机
@@ -1497,6 +1497,7 @@ void Tracking::GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD) {
 
   /**    1.构造Frame    **/
   // if (mSensor == System::RGBD)
+  printf("mbf: %f\n", mbf);
   mCurrentFrame = Frame(mImGray, imDepth, mpORBextractorLeft, mK, mDistCoef, mbf, mThDepth, mpCamera);
   // else if(mSensor == System::IMU_RGBD)
   //     mCurrentFrame =
@@ -1819,9 +1820,13 @@ void Tracking::Track() {
     // System is initialized. Track Frame.
     bool bOK;
     if (mState == OK) {
-      bOK = TrackWithMotionModel();
+      if(mbVelocity){
+        bOK = TrackWithMotionModel();
+      }else{
+        bOK = TrackReferenceKeyFrame();
+      }
     }
-    
+
     // 更新速度模型
     if (bOK) {
       // Update motion model
@@ -1829,6 +1834,14 @@ void Tracking::Track() {
       if (mLastFrame.isSet() && mCurrentFrame.isSet()) {
         Sophus::SE3f LastTwc = mLastFrame.GetPose().inverse();
         mVelocity = mCurrentFrame.GetPose() * LastTwc;
+
+        printf("velocity:\n");
+        float* vel = mVelocity.data();
+        for(int i = 0;i  < 7; i ++){
+          printf("%f ", vel[i]);
+        }
+        printf("\n");
+
         mbVelocity = true;
       } else {
         mbVelocity = false;
@@ -1918,7 +1931,15 @@ void Tracking::StereoInitialization() {
     // }
     // else
     mCurrentFrame.SetPose(Sophus::SE3f());
-
+        // std::cout << "current pos : " << std::endl;
+        // float* pos_c = mCurrentFrame.GetPose().data();
+        // for(int i = 0; i < 4; i ++){
+        //   for(int j = 0; j < 4; j ++){
+        //     std::cout << pos_c[j + i * 4];
+        //   }
+        //   std::cout << std::endl;
+        // }
+        
     // // Create KeyFrame
     // KeyFrame* pKFini = new KeyFrame(mCurrentFrame,mpAtlas->GetCurrentMap(),mpKeyFrameDB);
 
@@ -2260,65 +2281,70 @@ void Tracking::StereoInitialization() {
 //     }
 // }
 
-// bool Tracking::TrackReferenceKeyFrame()
-// {
-//     // Compute Bag of Words vector
-//     mCurrentFrame.ComputeBoW();
+/**
+ * @brief 这里是第一帧的跟踪方式，因为第一帧时速度模型里的速度还没有值
+ * 1. 和参考关键帧进行匹配，把匹配到的地图点设置为当前帧的地图点
+ * 2. 用这些匹配到地图点对当前帧进行位姿优化(我们这里没有关键帧，就直接自己优化自己了)
+ * 3. 
+ */
+bool Tracking::TrackReferenceKeyFrame()
+{
+  printf("tracking reference...\n");
+    // // Compute Bag of Words vector
+    // mCurrentFrame.ComputeBoW();
 
-//     // We perform first an ORB matching with the reference keyframe
-//     // If enough matches are found we setup a PnP solver
-//     ORBmatcher matcher(0.7,true);
-//     vector<MapPoint*> vpMapPointMatches;
+    // // We perform first an ORB matching with the reference keyframe
+    // // If enough matches are found we setup a PnP solver
+    // ORBmatcher matcher(0.7,true);
+    // vector<MapPoint*> vpMapPointMatches;
 
-//     int nmatches = matcher.SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches);
+    // int nmatches = matcher.SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches);
 
-//     if(nmatches<15)
-//     {
-//         cout << "TRACK_REF_KF: Less than 15 matches!!\n";
-//         return false;
-//     }
+    // if(nmatches<15)
+    // {
+    //     cout << "TRACK_REF_KF: Less than 15 matches!!\n";
+    //     return false;
+    // }
 
-//     mCurrentFrame.mvpMapPoints = vpMapPointMatches;
-//     mCurrentFrame.SetPose(mLastFrame.GetPose());
+    // mCurrentFrame.mvpMapPoints = vpMapPointMatches;
+    mCurrentFrame.SetPose(mLastFrame.GetPose());
 
-//     //mCurrentFrame.PrintPointDistribution();
 
-//     // cout << " TrackReferenceKeyFrame mLastFrame.mTcw:  " << mLastFrame.mTcw << endl;
-//     Optimizer::PoseOptimization(&mCurrentFrame);
+    // cout << " TrackReferenceKeyFrame mLastFrame.mTcw:  " << mLastFrame.mTcw << endl;
+    ORB_SLAM3::PoseOptimization(&mCurrentFrame);
+    // Discard outliers
+    int nmatchesMap = 0;
+    for(int i =0; i<mCurrentFrame.N; i++)
+    {
+        //if(i >= mCurrentFrame.Nleft) break;
+        if(mCurrentFrame.mvpMapPoints[i])
+        {
+            if(mCurrentFrame.mvbOutlier[i])
+            {
+                MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
 
-//     // Discard outliers
-//     int nmatchesMap = 0;
-//     for(int i =0; i<mCurrentFrame.N; i++)
-//     {
-//         //if(i >= mCurrentFrame.Nleft) break;
-//         if(mCurrentFrame.mvpMapPoints[i])
-//         {
-//             if(mCurrentFrame.mvbOutlier[i])
-//             {
-//                 MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
+                mCurrentFrame.mvpMapPoints[i]=static_cast<MapPoint*>(NULL);
+                mCurrentFrame.mvbOutlier[i]=false;
+                // if(i < mCurrentFrame.Nleft){
+                //     pMP->mbTrackInView = false;
+                // }
+                // else{
+                //     pMP->mbTrackInViewR = false;
+                // }
+                pMP->mbTrackInView = false;
+                pMP->mnLastFrameSeen = mCurrentFrame.mnId;
+                // nmatches--;
+            }
+            // else if(mCurrentFrame.mvpMapPoints[i]->Observations()>0)
+            //     nmatchesMap++;
+        }
+    }
 
-//                 mCurrentFrame.mvpMapPoints[i]=static_cast<MapPoint*>(NULL);
-//                 mCurrentFrame.mvbOutlier[i]=false;
-//                 if(i < mCurrentFrame.Nleft){
-//                     pMP->mbTrackInView = false;
-//                 }
-//                 else{
-//                     pMP->mbTrackInViewR = false;
-//                 }
-//                 pMP->mbTrackInView = false;
-//                 pMP->mnLastFrameSeen = mCurrentFrame.mnId;
-//                 nmatches--;
-//             }
-//             else if(mCurrentFrame.mvpMapPoints[i]->Observations()>0)
-//                 nmatchesMap++;
-//         }
-//     }
-
-//     if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
-//         return true;
-//     else
-//         return nmatchesMap>=10;
-// }
+    // if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
+        return true;
+    // else
+        // return nmatchesMap>=10;
+}
 
 /**
  * @brief 更新上一帧的相关信息,我们这里给上一帧生成地图点
@@ -2383,7 +2409,7 @@ void Tracking::UpdateLastFrame() {
       // x3D设置为worldpos
       MapPoint* pNewMP = new MapPoint(x3D, &mLastFrame, i);
       mLastFrame.mvpMapPoints[i] = pNewMP;
-      std::cout << "pos ..." << std::endl;
+    //   std::cout << "pos ..." << std::endl;
       // Eigen::Vector3f pos = pNewMP->GetWorldPos();
       // std::cout <<  pos(0) << std::endl;
 
@@ -2441,9 +2467,9 @@ bool Tracking::TrackWithMotionModel() {
   // else
   th = 15;
 
-  // // 特征点匹配(根据前一帧的MapPoints重投影，然后在投影点的一定范围内进行ORB特征匹配，生成当前帧的MapPoints)
-  //   int nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
-
+  // 特征点匹配(根据前一帧的MapPoints重投影，然后在投影点的一定范围内进行ORB特征匹配，生成当前帧的MapPoints)
+    int nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,th,false);
+    std::cout << "key points matches: " << nmatches << std::endl;
   // // If few matches, uses a wider window search
   // if(nmatches<20)
   // {
@@ -2463,9 +2489,21 @@ bool Tracking::TrackWithMotionModel() {
   //     else
   //         return false;
   // }
+  // 第一帧的时候还没有速度，先不优化
+  if(mbVelocity){
+    // Optimize frame pose with all matches
+    ORB_SLAM3::PoseOptimization(&mCurrentFrame);
+  }
+  // Sophus::SE3<float> pos = mCurrentFrame.GetPose();               // 得到变换矩阵
+  // // printf("Getting Pose\n");
+  // printf("after opt: \n");
+  // float* pos1 = pos.data();
+  // for (int i = 0; i < 7; i++) {
+  //   printf("%f ", pos1[i]);
+  // }
+  // printf("\n");
 
-  // // Optimize frame pose with all matches
-  // Optimizer::PoseOptimization(&mCurrentFrame);
+//   std::cout << "after : " << mCurrentFrame.GetPose().data() << std::endl;
 
   // // 优化时会有内点、外点的区分，这里把被判断为外点的那些点都剔除
   // // Discard outliers

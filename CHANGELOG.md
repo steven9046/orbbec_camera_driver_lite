@@ -105,6 +105,50 @@
 ## v1.2.4 @2022.5.26 ##
 * 1. 激活恒速模型，为帧间追踪做准备
 * 2. UpdateLastFrame 恢复为给 LastFrame 创建地图点
-* 3. 添加 ORBmatcher
+* 3. 添加 DBoW2
+* 3. Frame 里相应修改
+    * a. Frame 里的 mvbOutlier 激活，这个用来记录是否是图优化的外点
+    * b. ComputeImageBounds 激活，用来判断重投影的点是否在图像内
+    * c. 获取区域内的特征 GetFeaturesInArea
+* 4. 添加 ORBmatcher
     * a. 这里用到了 SearchByProjection 把相关函数都激活
     * b. 双目相机时会对右目进行匹配，这里删掉了
+    * c. radius = th * scale 搜索范围，阈值 th = 15 还要根据处于哪层金字塔进行改变
+    * d. 搜索范围投影范围内的特征点，计算描述子的汉明距离(这个计算函数挺有意思的)
+* 5. 添加 Optimizer (没有构造函数)
+    * a. 我们这里只用了一个优化函数 PoseOptimization(Frame* pFrame)
+            顶点是 VertexSE3Expmap
+            边是   EdgeSE3ProjectXYZOnlyPose 
+            把其他没用到的类型都注释掉
+    * b. 加入 OptimizableTypes 里边是自己定义的一些优化变量，四个比较有用的接口
+        ::read // 基类 Edge 的一个纯虚函数，必须实现，其实没有使用，用的是 setMeasurement setInformation
+        ::write // 同上
+        ::computeError // 这里定义待优化的 loss, 本例中是 重投影误差
+        ::linearizeOplus // 这里是优化用的数学公式，每太弄明白
+    * c. 优化流程
+        1. 构造优化图并输入数据
+        2. 进行迭代
+* 6. 优化解BUG
+    * a. Sophus::SE3f 是用一个四元数加一个平移向量组成 [q, t], 所以初始位姿为 [0, 0, 0, 1, 0, 0, 0]
+    * b. optimizer 只要addVertex就会死
+    * c. 正常 StereoInitialization 时会创建第一个关键帧，之后 TrackReferenceKeyFrame 时会用这个关键帧来匹配，生成地图点
+         我们这里没有关键帧，所以第一帧 mCurrentFrame 里没有地图点，需要生成
+         这样还不如第一帧直接跳过，不进行 poseOptimization
+    * d. 要保证不进行优化，也可以运行，不能崩溃，因为原版ORBSLAM就不会崩溃
+    * e. Optimizer的奇怪结构
+            为什么弄成一个class? 因为这样可以通过 EIGEN_MAKE_ALIGNED_OPERATOR_NEW 进行内存对齐(CPU SSE 机制)
+            为什么要定义成static函数？ 因为不想 new 一个optimizer对象出来，直接使用其中函数
+            那么问题来了， 那个Eigen的宏岂不是没用了
+            把这个类结构取消，同样会段错误
+    * f. 百度了一下最终解决了问题：
+            https://blog.csdn.net/gls_nuaa/article/details/122106358
+            https://blog.csdn.net/torresergio/article/details/103253538
+        CMakeLists.txt里有一个编译选项 -march=native ，可以根据CPU架构进行优化，g2o编译的时候使用了这个选项，所以我们的工程里也要使用这个选项
+* 7. 优化了什么？
+        非线性优化就是解一个最小二乘，目标函数是"重投影误差"，根本没有涉及两帧之间的关系，都是当前帧自己玩
+        这里分为单目和双目(这个双目是自己构造出来的，RGBD相机其实只有一个目，具体看 ComputeStereoFromRGBD)
+        单目时优化的是 Frame1 上的 3D MapPoint 投影到 Frame1 上的像素坐标 (x2,y2) 与 特征提取时 得到的 Frame1 上该特征点的像素坐标 (x1,y1)的差值
+        双目时优化的是 Frame1 上的 3D MapPoint 投影到 Frame1 上的像素坐标 (x2,y2) 与 特征提取时 得到的 Frame1 上该特征点的像素坐标 (x1,y1)的差值
+                     附加一个在模拟出来的双目里的x坐标差值 ( mvuRight 里保存的那个值)
+* 8. 修改了 TrackReferenceKeyFrame 里关于判定为外点的 MapPoint 的观测性质，因为地图等元素还没加入，这些性质不起作用
+    

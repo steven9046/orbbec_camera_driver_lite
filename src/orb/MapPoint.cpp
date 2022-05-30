@@ -29,7 +29,7 @@ long unsigned int MapPoint::nNextId=0;
 
 MapPoint::MapPoint():
     mnFirstKFid(0), mnFirstFrame(0), nObs(0),
-    mnVisible(1), mnFound(1), mbBad(false),
+    mnVisible(1), mnFound(1), mbBad(false),mnLastFrameSeen(0),
     mpReplaced(static_cast<MapPoint*>(NULL))
 {
     mpReplaced = static_cast<MapPoint*>(NULL);
@@ -81,7 +81,7 @@ MapPoint::MapPoint():
  */
 MapPoint::MapPoint(const Eigen::Vector3f &Pos, Frame* pFrame, const int &idxF):
     mnFirstKFid(-1), mnFirstFrame(pFrame->mnId), nObs(0),
-    mnVisible(1),
+    mnVisible(1),mnLastFrameSeen(0),
     mnFound(1), mbBad(false), mpReplaced(NULL)
 {
     SetWorldPos(Pos);
@@ -424,11 +424,11 @@ bool MapPoint::isBad()
 //     }
 // }
 
-// cv::Mat MapPoint::GetDescriptor()
-// {
-//     unique_lock<mutex> lock(mMutexFeatures);
-//     return mDescriptor.clone();
-// }
+cv::Mat MapPoint::GetDescriptor()
+{
+    // unique_lock<mutex> lock(mMutexFeatures);
+    return mDescriptor.clone();
+}
 
 // tuple<int,int> MapPoint::GetIndexInKeyFrame(KeyFrame *pKF)
 // {

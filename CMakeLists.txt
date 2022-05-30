@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(orbbec_camera_driver)
-
+SET(CMAKE_BUILD_TYPE Release)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
 set (Tutorial_VERSION_MAJOR 1)
 set (Tutorial_VERSION_MINOR 0)
 
@@ -13,7 +15,7 @@ configure_file (
 # 这里没有版本要求，用的都是最基本的功能
 find_package(OpenCV REQUIRED)
 find_package(PCL REQUIRED)
-find_package(Eigen REQUIRED)
+find_package(Eigen3 REQUIRED)
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
     find_package(Pangolin 0.4 REQUIRED)
 endif()
@@ -67,6 +69,8 @@ add_executable(orbbec_camera_driver
                 src/frame.cpp
                 src/orb/ORBextractor.cpp
                 src/orb/ORBmatcher.cpp
+                src/orb/Optimizer.cpp
+                src/orb/OptimizableTypes.cpp
                 src/orb/MapPoint.cpp
                 src/orb/Frame.cpp
                 src/orb/Tracking.cpp
@@ -102,6 +106,9 @@ target_link_libraries(orbbec_camera_driver
                     ${UVC_LIBS}
                     ${OPENNI2_LIBS}
                     ${TFLITE_LIBS}
+                    ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.so
+                    ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
+                    -lcrypto
                     )
 
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")

@@ -41,7 +41,7 @@ Camera.RGB: 0
 
 # Close/Far threshold. Baseline times.
 Stereo.ThDepth: 40.0
-Stereo.b: 0.07732
+Stereo.b: 0.088
 
 # Depth map values factor
 RGBD.DepthMapFactor: 1.0 # 1.0 for ROS_bag

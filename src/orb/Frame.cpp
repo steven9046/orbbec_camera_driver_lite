@@ -24,10 +24,10 @@
 // #include "ORBextractor.h"
 // #include "Converter.h"
 // #include "ORBmatcher.h"
-// #include "GeometricCamera.h"
+#include "CameraModels/GeometricCamera.h"
 
 #include <thread>
-// #include <include/CameraModels/Pinhole.h>
+#include "CameraModels/Pinhole.h"
 // #include <include/CameraModels/KannalaBrandt8.h>
 
 namespace ORB_SLAM3
@@ -65,7 +65,7 @@ Frame::Frame(const Frame &frame)
      mvScaleFactors(frame.mvScaleFactors), mvInvScaleFactors(frame.mvInvScaleFactors),
      mvLevelSigma2(frame.mvLevelSigma2), mvInvLevelSigma2(frame.mvInvLevelSigma2), mpPrevFrame(frame.mpPrevFrame),
      mbIsSet(frame.mbIsSet),
-     mpCamera(frame.mpCamera),mTcw(frame.mTcw), mbHasPose(false)
+     mpCamera(frame.mpCamera),mTcw(frame.mTcw), mbHasPose(false), mvbOutlier(frame.mvbOutlier)
 {
     // 复制grid信息
     for(int i=0;i<FRAME_GRID_COLS;i++)
@@ -152,7 +152,7 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, ORBextractor* extrac
     // mmProjectPoints.clear();
     // mmMatchedInImage.clear();
 
-    // mvbOutlier = vector<bool>(N,false);
+    mvbOutlier = vector<bool>(N,false);
 
     // This is done only for the first Frame (or after a change in the calibration)
     if(mbInitialComputations)
@@ -484,73 +484,86 @@ void Frame::UpdatePoseMatrices()
 //     return mRcw * pCw + mtcw;
 // }
 
-// vector<size_t> Frame::GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel, const int maxLevel, const bool bRight) const
-// {
-//     vector<size_t> vIndices;
-//     vIndices.reserve(N);
+/**
+ * @brief 
+ * @param [in] x            搜索中心 x 坐标
+ * @param [in] y            搜索中心 y 坐标
+ * @param [in] r            搜索半径
+ * @param [in] minLevel     金字塔层
+ * @param [in] maxLevel
+ * @param [in] bRight
+ * 找到中心为 (x,y) 半径为 r 的范围内的 keypoint, 返回索引
+ * 
+ */
+vector<size_t> Frame::GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel, const int maxLevel, const bool bRight) const
+{
+    vector<size_t> vIndices;
+    vIndices.reserve(N);
 
-//     float factorX = r;
-//     float factorY = r;
+    float factorX = r;
+    float factorY = r;
 
-//     const int nMinCellX = max(0,(int)floor((x-mnMinX-factorX)*mfGridElementWidthInv));
-//     if(nMinCellX>=FRAME_GRID_COLS)
-//     {
-//         return vIndices;
-//     }
+    // 得到四个角(Grid的角)
+    const int nMinCellX = max(0,(int)floor((x-mnMinX-factorX)*mfGridElementWidthInv));
+    if(nMinCellX>=FRAME_GRID_COLS)
+    {
+        return vIndices;
+    }
 
-//     const int nMaxCellX = min((int)FRAME_GRID_COLS-1,(int)ceil((x-mnMinX+factorX)*mfGridElementWidthInv));
-//     if(nMaxCellX<0)
-//     {
-//         return vIndices;
-//     }
+    const int nMaxCellX = min((int)FRAME_GRID_COLS-1,(int)ceil((x-mnMinX+factorX)*mfGridElementWidthInv));
+    if(nMaxCellX<0)
+    {
+        return vIndices;
+    }
 
-//     const int nMinCellY = max(0,(int)floor((y-mnMinY-factorY)*mfGridElementHeightInv));
-//     if(nMinCellY>=FRAME_GRID_ROWS)
-//     {
-//         return vIndices;
-//     }
+    const int nMinCellY = max(0,(int)floor((y-mnMinY-factorY)*mfGridElementHeightInv));
+    if(nMinCellY>=FRAME_GRID_ROWS)
+    {
+        return vIndices;
+    }
 
-//     const int nMaxCellY = min((int)FRAME_GRID_ROWS-1,(int)ceil((y-mnMinY+factorY)*mfGridElementHeightInv));
-//     if(nMaxCellY<0)
-//     {
-//         return vIndices;
-//     }
+    const int nMaxCellY = min((int)FRAME_GRID_ROWS-1,(int)ceil((y-mnMinY+factorY)*mfGridElementHeightInv));
+    if(nMaxCellY<0)
+    {
+        return vIndices;
+    }
 
-//     const bool bCheckLevels = (minLevel>0) || (maxLevel>=0);
+    const bool bCheckLevels = (minLevel>0) || (maxLevel>=0);
 
-//     for(int ix = nMinCellX; ix<=nMaxCellX; ix++)
-//     {
-//         for(int iy = nMinCellY; iy<=nMaxCellY; iy++)
-//         {
-//             const vector<size_t> vCell = (!bRight) ? mGrid[ix][iy] : mGridRight[ix][iy];
-//             if(vCell.empty())
-//                 continue;
+    for(int ix = nMinCellX; ix<=nMaxCellX; ix++)
+    {
+        for(int iy = nMinCellY; iy<=nMaxCellY; iy++)
+        {
+            const vector<size_t> vCell = mGrid[ix][iy]; //(!bRight) ? mGrid[ix][iy] : mGridRight[ix][iy];
+            if(vCell.empty())
+                continue;
 
-//             for(size_t j=0, jend=vCell.size(); j<jend; j++)
-//             {
-//                 const cv::KeyPoint &kpUn = (Nleft == -1) ? mvKeysUn[vCell[j]]
-//                                                          : (!bRight) ? mvKeys[vCell[j]]
-//                                                                      : mvKeysRight[vCell[j]];
-//                 if(bCheckLevels)
-//                 {
-//                     if(kpUn.octave<minLevel)
-//                         continue;
-//                     if(maxLevel>=0)
-//                         if(kpUn.octave>maxLevel)
-//                             continue;
-//                 }
+            for(size_t j=0, jend=vCell.size(); j<jend; j++)
+            {
+                // const cv::KeyPoint &kpUn = (Nleft == -1) ? mvKeysUn[vCell[j]]
+                //                                          : (!bRight) ? mvKeys[vCell[j]]
+                //                                                      : mvKeysRight[vCell[j]];
+                const cv::KeyPoint &kpUn =  mvKeysUn[vCell[j]];
+                if(bCheckLevels)
+                {
+                    if(kpUn.octave<minLevel)
+                        continue;
+                    if(maxLevel>=0)
+                        if(kpUn.octave>maxLevel)
+                            continue;
+                }
 
-//                 const float distx = kpUn.pt.x-x;
-//                 const float disty = kpUn.pt.y-y;
+                const float distx = kpUn.pt.x-x;
+                const float disty = kpUn.pt.y-y;
 
-//                 if(fabs(distx)<factorX && fabs(disty)<factorY)
-//                     vIndices.push_back(vCell[j]);
-//             }
-//         }
-//     }
+                if(fabs(distx)<factorX && fabs(disty)<factorY)
+                    vIndices.push_back(vCell[j]);
+            }
+        }
+    }
 
-//     return vIndices;
-// }
+    return vIndices;
+}
 
 bool Frame::PosInGrid(const cv::KeyPoint &kp, int &posX, int &posY)
 {
@@ -617,31 +630,31 @@ void Frame::UndistortKeyPoints()
  */
 void Frame::ComputeImageBounds(const cv::Mat &imLeft)
 {
-    // if(mDistCoef.at<float>(0)!=0.0)
-    // {
-    //     cv::Mat mat(4,2,CV_32F);
-    //     mat.at<float>(0,0)=0.0; mat.at<float>(0,1)=0.0;
-    //     mat.at<float>(1,0)=imLeft.cols; mat.at<float>(1,1)=0.0;
-    //     mat.at<float>(2,0)=0.0; mat.at<float>(2,1)=imLeft.rows;
-    //     mat.at<float>(3,0)=imLeft.cols; mat.at<float>(3,1)=imLeft.rows;
+    if(mDistCoef.at<float>(0)!=0.0)
+    {
+        cv::Mat mat(4,2,CV_32F);
+        mat.at<float>(0,0)=0.0; mat.at<float>(0,1)=0.0;
+        mat.at<float>(1,0)=imLeft.cols; mat.at<float>(1,1)=0.0;
+        mat.at<float>(2,0)=0.0; mat.at<float>(2,1)=imLeft.rows;
+        mat.at<float>(3,0)=imLeft.cols; mat.at<float>(3,1)=imLeft.rows;
 
-    //     mat=mat.reshape(2);
-    //     cv::undistortPoints(mat,mat,static_cast<Pinhole*>(mpCamera)->toK(),mDistCoef,cv::Mat(),mK);
-    //     mat=mat.reshape(1);
+        mat=mat.reshape(2);
+        cv::undistortPoints(mat,mat,static_cast<Pinhole*>(mpCamera)->toK(),mDistCoef,cv::Mat(),mK);
+        mat=mat.reshape(1);
 
-    //     // Undistort corners
-    //     mnMinX = min(mat.at<float>(0,0),mat.at<float>(2,0));
-    //     mnMaxX = max(mat.at<float>(1,0),mat.at<float>(3,0));
-    //     mnMinY = min(mat.at<float>(0,1),mat.at<float>(1,1));
-    //     mnMaxY = max(mat.at<float>(2,1),mat.at<float>(3,1));
-    // }
-    // else
-    // {
+        // Undistort corners
+        mnMinX = min(mat.at<float>(0,0),mat.at<float>(2,0));
+        mnMaxX = max(mat.at<float>(1,0),mat.at<float>(3,0));
+        mnMinY = min(mat.at<float>(0,1),mat.at<float>(1,1));
+        mnMaxY = max(mat.at<float>(2,1),mat.at<float>(3,1));
+    }
+    else
+    {
         mnMinX = 0.0f;
         mnMaxX = imLeft.cols;
         mnMinY = 0.0f;
         mnMaxY = imLeft.rows;
-    // }
+    }
 }
 
 // void Frame::ComputeStereoMatches()
@@ -826,7 +839,7 @@ void Frame::ComputeImageBounds(const cv::Mat &imLeft)
  */
 void Frame::ComputeStereoFromRGBD(const cv::Mat &imDepth)
 {
-
+    // 右目相机里存的x坐标？
     mvuRight = vector<float>(N,-1);
     mvDepth = vector<float>(N,-1);
 
@@ -839,11 +852,12 @@ void Frame::ComputeStereoFromRGBD(const cv::Mat &imDepth)
         const float &u = kp.pt.x;
 
         const float d = imDepth.at<float>(v,u);
-
+        // printf("d: %f\n", d);
         if(d>0)
         {
             mvDepth[i] = d;
             mvuRight[i] = kpU.pt.x-mbf/d;
+            // printf("mvuRight: %f\n", mvuRight[i]);
         }
     }
 }

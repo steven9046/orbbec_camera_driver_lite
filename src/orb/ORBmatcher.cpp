@@ -1637,253 +1637,188 @@ namespace ORB_SLAM3
 //         return nFound;
 //     }
 
-//     /**
-//      * @brief 运行这个
-//      * @param th        阈值
-//      * @param bMono     是否是单目
-//      * 1. 把上一帧的MapPoints投影到当前帧的图像平面上
-//      * 2. 按照一个半径在当前帧图像中搜索描述子，找到一个最佳匹配
-//      *    结果是当前帧的MapPoint有了内容(匹配到的上一帧的MapPoint)
-//      *    这样MapPoint会越来越少，所以需要updatelastFrame来增加MapPoints
-//      */
-//     int ORBmatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, const float th, const bool bMono)
-//     {
-//         int nmatches = 0;
-
-//         /*** 1. 投影到当前帧  ***/
-//         // Rotation Histogram (to check rotation consistency)
-//         vector<int> rotHist[HISTO_LENGTH];
-//         for(int i=0;i<HISTO_LENGTH;i++)
-//             rotHist[i].reserve(500);
-//         const float factor = 1.0f/HISTO_LENGTH;
+    /**
+     * @brief 运行这个
+     * @param th        阈值
+     * @param bMono     是否是单目
+     * 1. 把上一帧的MapPoints投影到当前帧的图像平面上
+     * 2. 按照一个半径在当前帧图像中搜索描述子，找到一个最佳匹配
+     *    结果是当前帧的MapPoint有了内容(匹配到的上一帧的MapPoint)
+     *    这样MapPoint会越来越少，所以需要updatelastFrame来增加MapPoints
+     */
+    int ORBmatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, const float th, const bool bMono)
+    {
+        int nmatches = 0;
+        /*** 1. 投影到当前帧  ***/
+        // Rotation Histogram (to check rotation consistency)
+        vector<int> rotHist[HISTO_LENGTH];
+        for(int i=0;i<HISTO_LENGTH;i++)
+            rotHist[i].reserve(500);
+        const float factor = 1.0f/HISTO_LENGTH;
         
-//         // 当前帧的位姿
-//         const Sophus::SE3f Tcw = CurrentFrame.GetPose();
-//         const Eigen::Vector3f twc = Tcw.inverse().translation();
-//         // 上一帧的位姿
-//         const Sophus::SE3f Tlw = LastFrame.GetPose();
-//         const Eigen::Vector3f tlc = Tlw * twc;
+        // 当前帧的位姿
+        const Sophus::SE3f Tcw = CurrentFrame.GetPose();
+        const Eigen::Vector3f twc = Tcw.inverse().translation();
+        // 上一帧的位姿
+        const Sophus::SE3f Tlw = LastFrame.GetPose();
+        const Eigen::Vector3f tlc = Tlw * twc;
 
-//         const bool bForward = tlc(2)>CurrentFrame.mb && !bMono;
-//         const bool bBackward = -tlc(2)>CurrentFrame.mb && !bMono;
-        
-//         /*** 2. 寻找最佳匹配  ***/
-//         // 遍历上一帧中的MapPoint点
-//         for(int i=0; i<LastFrame.N; i++)
-//         {
-//             MapPoint* pMP = LastFrame.mvpMapPoints[i];
-//             if(pMP)
-//             {
-//                 if(!LastFrame.mvbOutlier[i])
-//                 {
-//                     // 把地图点投影到当前帧，求得像素坐标
-//                     /**
-//                      * 以下是三维世界中的MapPoint点到像素坐标的计算过程
-//                      * 1.世界坐标-->相机坐标；
-//                      * 2.相机坐标-->相机归一化平面坐标；
-//                      * 3.相机归一化平面坐标-->像素坐标；
-//                      */
-//                     Eigen::Vector3f x3Dw = pMP->GetWorldPos();
-//                     Eigen::Vector3f x3Dc = Tcw * x3Dw;
+        // 这两个是确定搜索方向的？
+        const bool bForward = tlc(2)>CurrentFrame.mb && !bMono;
+        const bool bBackward = -tlc(2)>CurrentFrame.mb && !bMono;
 
-//                     const float xc = x3Dc(0);
-//                     const float yc = x3Dc(1);
-//                     const float invzc = 1.0/x3Dc(2);
+        /*** 2. 寻找最佳匹配  ***/
+        // 遍历上一帧中的MapPoint点
+        for(int i=0; i<LastFrame.N; i++)
+        {
+            MapPoint* pMP = LastFrame.mvpMapPoints[i];
 
-//                     if(invzc<0)
-//                         continue;
-//                     /**
-//                      * X/Z = X * 1/Z = xc * invzc
-//                      * Y/Z = Y * 1/Z = yc * invzc
-//                      * u,v的计算公式如下：
-//                      * u = fx * X/Z + cx
-//                      * v = fy * Y/Z + cy
-//                      */
-//                     Eigen::Vector2f uv = CurrentFrame.mpCamera->project(x3Dc);
-//                     // 检查是否在图像内
-//                     if(uv(0)<CurrentFrame.mnMinX || uv(0)>CurrentFrame.mnMaxX)
-//                         continue;
-//                     if(uv(1)<CurrentFrame.mnMinY || uv(1)>CurrentFrame.mnMaxY)
-//                         continue;
+            if(pMP)
+            {
+                if(!LastFrame.mvbOutlier[i])
+                {
 
-//                     //octave就是该关键点所在金字塔中哪个层
-//                     int nLastOctave = (LastFrame.Nleft == -1 || i < LastFrame.Nleft) ? LastFrame.mvKeys[i].octave
-//                                                                                      : LastFrame.mvKeysRight[i - LastFrame.Nleft].octave;
+                    // 把地图点投影到当前帧，求得像素坐标
+                    /**
+                     * 以下是三维世界中的MapPoint点到像素坐标的计算过程
+                     * 1.世界坐标-->相机坐标；
+                     * 2.相机坐标-->相机归一化平面坐标；
+                     * 3.相机归一化平面坐标-->像素坐标；
+                     */
+                    Eigen::Vector3f x3Dw = pMP->GetWorldPos();
+                    Eigen::Vector3f x3Dc = Tcw * x3Dw;
 
-//                     // Search in a window. Size depends on scale
-//                     float radius = th*CurrentFrame.mvScaleFactors[nLastOctave];
+                    const float xc = x3Dc(0);
+                    const float yc = x3Dc(1);
+                    const float invzc = 1.0/x3Dc(2);
 
-//                     vector<size_t> vIndices2;
+                    if(invzc<0)
+                        continue;
+                    /**
+                     * X/Z = X * 1/Z = xc * invzc
+                     * Y/Z = Y * 1/Z = yc * invzc
+                     * u,v的计算公式如下：
+                     * u = fx * X/Z + cx
+                     * v = fy * Y/Z + cy
+                     */
+                    Eigen::Vector2f uv = CurrentFrame.mpCamera->project(x3Dc);
+                    // 检查是否在图像内
+                    if(uv(0)<CurrentFrame.mnMinX || uv(0)>CurrentFrame.mnMaxX)
+                        continue;
+                    if(uv(1)<CurrentFrame.mnMinY || uv(1)>CurrentFrame.mnMaxY)
+                        continue;
 
-//                     if(bForward)
-//                         vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0),uv(1), radius, nLastOctave);
-//                     else if(bBackward)
-//                         vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0),uv(1), radius, 0, nLastOctave);
-//                     else
-//                         vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0),uv(1), radius, nLastOctave-1, nLastOctave+1);
+                    //octave就是该关键点所在金字塔中哪个层
+                    // int nLastOctave = (LastFrame.Nleft == -1 || i < LastFrame.Nleft) ? LastFrame.mvKeys[i].octave
+                    //                                                                  : LastFrame.mvKeysRight[i - LastFrame.Nleft].octave;
+                    int nLastOctave = LastFrame.mvKeys[i].octave;
 
-//                     if(vIndices2.empty())
-//                         continue;
+                    // Search in a window. Size depends on scale
+                    float radius = th*CurrentFrame.mvScaleFactors[nLastOctave];
 
-//                     // 获取这个地图点的描述子
-//                     const cv::Mat dMP = pMP->GetDescriptor();
+                    vector<size_t> vIndices2;
 
-//                     int bestDist = 256;
-//                     int bestIdx2 = -1;
+                    if(bForward)
+                        vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0),uv(1), radius, nLastOctave);
+                    else if(bBackward)
+                        vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0),uv(1), radius, 0, nLastOctave);
+                    else
+                        vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0),uv(1), radius, nLastOctave-1, nLastOctave+1);
 
-//                     // 在搜索窗口里找到当前图像中最匹配的特征点
-//                     for(vector<size_t>::const_iterator vit=vIndices2.begin(), vend=vIndices2.end(); vit!=vend; vit++)
-//                     {
-//                         const size_t i2 = *vit;
+                    if(vIndices2.empty())
+                        continue;
 
-//                         if(CurrentFrame.mvpMapPoints[i2])
-//                             if(CurrentFrame.mvpMapPoints[i2]->Observations()>0)
-//                                 continue;
+                    // 获取这个地图点的描述子
+                    const cv::Mat dMP = pMP->GetDescriptor();
 
-//                         if(CurrentFrame.Nleft == -1 && CurrentFrame.mvuRight[i2]>0)
-//                         {
-//                             const float ur = uv(0) - CurrentFrame.mbf*invzc;
-//                             const float er = fabs(ur - CurrentFrame.mvuRight[i2]);
-//                             if(er>radius)
-//                                 continue;
-//                         }
+                    int bestDist = 256;
+                    int bestIdx2 = -1;
 
-//                         const cv::Mat &d = CurrentFrame.mDescriptors.row(i2);
+                    // 在搜索窗口里找到当前图像中最匹配的特征点
+                    for(vector<size_t>::const_iterator vit=vIndices2.begin(), vend=vIndices2.end(); vit!=vend; vit++)
+                    {
+                        const size_t i2 = *vit;
 
-//                         const int dist = DescriptorDistance(dMP,d);
+                        // if(CurrentFrame.mvpMapPoints[i2])
+                        //     if(CurrentFrame.mvpMapPoints[i2]->Observations()>0)
+                        //         continue;
 
-//                         if(dist<bestDist)
-//                         {
-//                             bestDist=dist;
-//                             bestIdx2=i2;
-//                         }
-//                     }
+                        // if(CurrentFrame.Nleft == -1 && CurrentFrame.mvuRight[i2]>0)
+                        // {
+                        //     const float ur = uv(0) - CurrentFrame.mbf*invzc;
+                        //     const float er = fabs(ur - CurrentFrame.mvuRight[i2]);
+                        //     if(er>radius)
+                        //         continue;
+                        // }
+
+                        const cv::Mat &d = CurrentFrame.mDescriptors.row(i2);
+
+                        const int dist = DescriptorDistance(dMP,d);
+
+                        if(dist<bestDist)
+                        {
+                            bestDist=dist;
+                            bestIdx2=i2;
+                        }
+                    }
                     
-//                     // 如果最佳匹配距离小于阈值，则认为匹配成功
-//                     if(bestDist<=TH_HIGH)
-//                     {
-//                         // 当前帧的地图点直接就用上一帧的地图点
-//                         CurrentFrame.mvpMapPoints[bestIdx2]=pMP;
-//                         nmatches++;
+                    // 如果最佳匹配距离小于阈值，则认为匹配成功
+                    if(bestDist<=TH_HIGH)
+                    {
+                        // 当前帧的地图点直接就用上一帧的地图点
+                        CurrentFrame.mvpMapPoints[bestIdx2]=pMP;
+                        nmatches++;
 
-//                         if(mbCheckOrientation)
-//                         {
-//                             cv::KeyPoint kpLF = (LastFrame.Nleft == -1) ? LastFrame.mvKeysUn[i]
-//                                                                         : (i < LastFrame.Nleft) ? LastFrame.mvKeys[i]
-//                                                                                                 : LastFrame.mvKeysRight[i - LastFrame.Nleft];
+                        if(mbCheckOrientation)
+                        {
+                            // cv::KeyPoint kpLF = (LastFrame.Nleft == -1) ? LastFrame.mvKeysUn[i]
+                            //                                             : (i < LastFrame.Nleft) ? LastFrame.mvKeys[i]
+                            //                                                                     : LastFrame.mvKeysRight[i - LastFrame.Nleft];
 
-//                             cv::KeyPoint kpCF = (CurrentFrame.Nleft == -1) ? CurrentFrame.mvKeysUn[bestIdx2]
-//                                                                            : (bestIdx2 < CurrentFrame.Nleft) ? CurrentFrame.mvKeys[bestIdx2]
-//                                                                                                              : CurrentFrame.mvKeysRight[bestIdx2 - CurrentFrame.Nleft];
-//                             float rot = kpLF.angle-kpCF.angle;
-//                             if(rot<0.0)
-//                                 rot+=360.0f;
-//                             int bin = round(rot*factor);
-//                             if(bin==HISTO_LENGTH)
-//                                 bin=0;
-//                             assert(bin>=0 && bin<HISTO_LENGTH);
-//                             rotHist[bin].push_back(bestIdx2);
-//                         }
-//                     }
+                            // cv::KeyPoint kpCF = (CurrentFrame.Nleft == -1) ? CurrentFrame.mvKeysUn[bestIdx2]
+                            //                                                : (bestIdx2 < CurrentFrame.Nleft) ? CurrentFrame.mvKeys[bestIdx2]
+                            //                                                                                  : CurrentFrame.mvKeysRight[bestIdx2 - CurrentFrame.Nleft];
+                            cv::KeyPoint kpLF = LastFrame.mvKeysUn[i];
+                            cv::KeyPoint kpCF = CurrentFrame.mvKeysUn[bestIdx2];
 
-//                     // 如果当前帧的左目匹配点数目不为-1(正常匹配就不为-1)
-//                     // 这个是双目的情况？？ RGB相机的帧上来就把这个设置为-1了
-//                     if(CurrentFrame.Nleft != -1){
-                        
-//                         // 把这个地图点又转换到哪个坐标系？
-//                         Eigen::Vector3f x3Dr = CurrentFrame.GetRelativePoseTrl() * x3Dc;
-//                         Eigen::Vector2f uv = CurrentFrame.mpCamera->project(x3Dr);
+                            float rot = kpLF.angle-kpCF.angle;
+                            if(rot<0.0)
+                                rot+=360.0f;
+                            int bin = round(rot*factor);
+                            if(bin==HISTO_LENGTH)
+                                bin=0;
+                            assert(bin>=0 && bin<HISTO_LENGTH);
+                            rotHist[bin].push_back(bestIdx2);
+                        }
+                    }
+                }
+            }
+        }
 
-//                         int nLastOctave = (LastFrame.Nleft == -1 || i < LastFrame.Nleft) ? LastFrame.mvKeys[i].octave
-//                                              : LastFrame.mvKeysRight[i - LastFrame.Nleft].octave;
+        // //Apply rotation consistency
+        // if(mbCheckOrientation)
+        // {
+        //     int ind1=-1;
+        //     int ind2=-1;
+        //     int ind3=-1;
 
-//                         // Search in a window. Size depends on scale
-//                         float radius = th*CurrentFrame.mvScaleFactors[nLastOctave];
+        //     ComputeThreeMaxima(rotHist,HISTO_LENGTH,ind1,ind2,ind3);
 
-//                         vector<size_t> vIndices2;
+        //     for(int i=0; i<HISTO_LENGTH; i++)
+        //     {
+        //         if(i!=ind1 && i!=ind2 && i!=ind3)
+        //         {
+        //             for(size_t j=0, jend=rotHist[i].size(); j<jend; j++)
+        //             {
+        //                 CurrentFrame.mvpMapPoints[rotHist[i][j]]=static_cast<MapPoint*>(NULL);
+        //                 nmatches--;
+        //             }
+        //         }
+        //     }
+        // }
 
-//                         if(bForward)
-//                             vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0),uv(1), radius, nLastOctave, -1,true);
-//                         else if(bBackward)
-//                             vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0),uv(1), radius, 0, nLastOctave, true);
-//                         else
-//                             vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0),uv(1), radius, nLastOctave-1, nLastOctave+1, true);
-
-//                         const cv::Mat dMP = pMP->GetDescriptor();
-
-//                         int bestDist = 256;
-//                         int bestIdx2 = -1;
-
-//                         for(vector<size_t>::const_iterator vit=vIndices2.begin(), vend=vIndices2.end(); vit!=vend; vit++)
-//                         {
-//                             const size_t i2 = *vit;
-//                             if(CurrentFrame.mvpMapPoints[i2 + CurrentFrame.Nleft])
-//                                 if(CurrentFrame.mvpMapPoints[i2 + CurrentFrame.Nleft]->Observations()>0)
-//                                     continue;
-
-//                             const cv::Mat &d = CurrentFrame.mDescriptors.row(i2 + CurrentFrame.Nleft);
-
-//                             const int dist = DescriptorDistance(dMP,d);
-
-//                             if(dist<bestDist)
-//                             {
-//                                 bestDist=dist;
-//                                 bestIdx2=i2;
-//                             }
-//                         }
-
-//                         if(bestDist<=TH_HIGH)
-//                         {
-//                             CurrentFrame.mvpMapPoints[bestIdx2 + CurrentFrame.Nleft]=pMP;
-//                             nmatches++;
-//                             if(mbCheckOrientation)
-//                             {
-//                                 cv::KeyPoint kpLF = (LastFrame.Nleft == -1) ? LastFrame.mvKeysUn[i]
-//                                                                             : (i < LastFrame.Nleft) ? LastFrame.mvKeys[i]
-//                                                                                                     : LastFrame.mvKeysRight[i - LastFrame.Nleft];
-
-//                                 cv::KeyPoint kpCF = CurrentFrame.mvKeysRight[bestIdx2];
-
-//                                 float rot = kpLF.angle-kpCF.angle;
-//                                 if(rot<0.0)
-//                                     rot+=360.0f;
-//                                 int bin = round(rot*factor);
-//                                 if(bin==HISTO_LENGTH)
-//                                     bin=0;
-//                                 assert(bin>=0 && bin<HISTO_LENGTH);
-//                                 rotHist[bin].push_back(bestIdx2  + CurrentFrame.Nleft);
-//                             }
-//                         }
-
-//                     }
-//                 }
-//             }
-//         }
-
-//         //Apply rotation consistency
-//         if(mbCheckOrientation)
-//         {
-//             int ind1=-1;
-//             int ind2=-1;
-//             int ind3=-1;
-
-//             ComputeThreeMaxima(rotHist,HISTO_LENGTH,ind1,ind2,ind3);
-
-//             for(int i=0; i<HISTO_LENGTH; i++)
-//             {
-//                 if(i!=ind1 && i!=ind2 && i!=ind3)
-//                 {
-//                     for(size_t j=0, jend=rotHist[i].size(); j<jend; j++)
-//                     {
-//                         CurrentFrame.mvpMapPoints[rotHist[i][j]]=static_cast<MapPoint*>(NULL);
-//                         nmatches--;
-//                     }
-//                 }
-//             }
-//         }
-
-//         return nmatches;
-//     }
+        return nmatches;
+    }
 
 //     int ORBmatcher::SearchByProjection(Frame &CurrentFrame, KeyFrame *pKF, const set<MapPoint*> &sAlreadyFound, const float th , const int ORBdist)
 //     {
@@ -2052,24 +1987,24 @@ namespace ORB_SLAM3
 //     }
 
 
-// // Bit set count operation from
-// // http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
-//     int ORBmatcher::DescriptorDistance(const cv::Mat &a, const cv::Mat &b)
-//     {
-//         const int *pa = a.ptr<int32_t>();
-//         const int *pb = b.ptr<int32_t>();
+// Bit set count operation from
+// http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
+    int ORBmatcher::DescriptorDistance(const cv::Mat &a, const cv::Mat &b)
+    {
+        const int *pa = a.ptr<int32_t>();
+        const int *pb = b.ptr<int32_t>();
 
-//         int dist=0;
+        int dist=0;
 
-//         for(int i=0; i<8; i++, pa++, pb++)
-//         {
-//             unsigned  int v = *pa ^ *pb;
-//             v = v - ((v >> 1) & 0x55555555);
-//             v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
-//             dist += (((v + (v >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
-//         }
+        for(int i=0; i<8; i++, pa++, pb++)
+        {
+            unsigned  int v = *pa ^ *pb;
+            v = v - ((v >> 1) & 0x55555555);
+            v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
+            dist += (((v + (v >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
+        }
 
-//         return dist;
-//     }
+        return dist;
+    }
 
 } //namespace ORB_SLAM

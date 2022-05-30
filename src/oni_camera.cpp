@@ -373,7 +373,7 @@ void OniCamera::computeConvertedDepth(const cv::Mat &imDepth, cv::Mat &converted
             if(depth){
               float tx = (i - u0_) / fdx_;
               float ty = (j - v0_) / fdy_;
-              float px = depth * tx;
+              float px = depth * tx ;
               float py = depth * ty;
               float pz = depth;
               Eigen::Matrix<float,3,1> pointDepth;
@@ -384,6 +384,7 @@ void OniCamera::computeConvertedDepth(const cv::Mat &imDepth, cv::Mat &converted
               pointRGB = mR * pointDepth + mT;
               // std::cout << "  RGB pixel: " << std::endl;
               // std::cout << pointRGB << std::endl;
+
               // 投影到RGB相机
               float relative_x = static_cast<float>(pointRGB[0]) / static_cast<float>(pointRGB[2]);
               float relative_y = static_cast<float>(pointRGB[1]) / static_cast<float>(pointRGB[2]);
@@ -392,7 +393,7 @@ void OniCamera::computeConvertedDepth(const cv::Mat &imDepth, cv::Mat &converted
               float rgb_pixel_y = relative_y * rgb_fy_ + rgb_cy_;
               bool valid_index = (0 <= rgb_pixel_x && rgb_pixel_x < ORBBEC_RGB_WIDTH) && (0 <= rgb_pixel_y && rgb_pixel_y < ORBBEC_RGB_HEIGHT);
               if(valid_index){
-                converted_depth.at<float>(rgb_pixel_y, rgb_pixel_x) = pointRGB[2];
+                converted_depth.at<float>(rgb_pixel_y, rgb_pixel_x) = pointRGB[2] * 0.001;
               }
             }
         }
