@@ -32,7 +32,6 @@
 // #include "ORBVocabulary.h"
 // #include "KeyFrameDatabase.h"
 #include "ORBextractor.h"
-#include "MapDrawer.h"
 // #include "System.h"
 // #include "ImuTypes.h"
 #include "Settings.h"
@@ -43,6 +42,9 @@
 #include "MapPoint.h"
 #include <mutex>
 #include <unordered_set>
+#ifdef LINUX_X86
+#include "MapDrawer.h"
+#endif
 
 namespace ORB_SLAM3
 {
@@ -60,8 +62,10 @@ class Tracking
 
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+#ifdef LINUX_X86
     Tracking(Settings* settings, MapDrawer *pMapDrawer);
-
+#endif
+    Tracking(Settings* settings);
     ~Tracking();
 
     // Parse the config file
@@ -263,7 +267,9 @@ protected:
     // //Drawers
     // Viewer* mpViewer;
     // FrameDrawer* mpFrameDrawer;
+#ifdef LINUX_X86
     MapDrawer* mpMapDrawer;
+#endif
     bool bStepByStep;
 
     // //Atlas

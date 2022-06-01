@@ -15,7 +15,7 @@
  *  limitations under the License.                                            *
  *                                                                            *
  *****************************************************************************/
-#define LINUX_X86
+// #define LINUX_X86
 #ifndef LINUX_X86
 #define LINUX_ARM
 #endif
@@ -30,6 +30,7 @@
 // for pangolin visualization
 #ifdef LINUX_X86
 #include <viewer.h>
+#include "src/orb/MapDrawer.h"
 #endif
 
 // for opencv
@@ -40,11 +41,10 @@
 #include "image_processor.h"
 
 // for orb
-#include "src/orb/ORBextractor.h"
 #include "src/orb/Frame.h"
-#include "src/orb/Tracking.h"
+#include "src/orb/ORBextractor.h"
 #include "src/orb/Settings.h"
-#include "src/orb/MapDrawer.h"
+#include "src/orb/Tracking.h"
 
 /*** Macro ***/
 #define WORK_DIR RESOURCE_DIR
@@ -81,8 +81,6 @@ int main(int argc, char** argv) {
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr mapPoints = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
 
-
-
   // /* Initialize image processor library */
   // ImageProcessor::InputParam input_param = {WORK_DIR, 4};
   // if (ImageProcessor::Initialize(input_param) != 0) {
@@ -109,40 +107,44 @@ int main(int argc, char** argv) {
   float ThDepth = THD;
   cv::Mat imDepth;
   float mDepthMapFactor = 0.001;
-  
+
   // 先创建一个 setting 加载配置文件
   ORB_SLAM3::Settings* settings_;
   string strSettingsFile("/home/ss/orbbec_camera_driver_lite/src/orb/ZORBBEC.yaml");
   cv::FileStorage fsSettings(strSettingsFile.c_str(), cv::FileStorage::READ);
-    if(!fsSettings.isOpened())
-    {
-       cerr << "Failed to open settings file at: " << strSettingsFile << endl;
-       exit(-1);
-    }
+  if (!fsSettings.isOpened()) {
+    cerr << "Failed to open settings file at: " << strSettingsFile << endl;
+    exit(-1);
+  }
   cv::FileNode node = fsSettings["File.version"];
-  if(!node.empty() && node.isString() && node.string() == "1.0"){
-        settings_ = new ORB_SLAM3::Settings(strSettingsFile, 0);
-        // mStrLoadAtlasFromFile = settings_->atlasLoadFile();
-        // mStrSaveAtlasToFile = settings_->atlasSaveFile();
-        std::cout << (*settings_) << std::endl;
-    }
+  if (!node.empty() && node.isString() && node.string() == "1.0") {
+    settings_ = new ORB_SLAM3::Settings(strSettingsFile, 0);
+    // mStrLoadAtlasFromFile = settings_->atlasLoadFile();
+    // mStrSaveAtlasToFile = settings_->atlasSaveFile();
+    std::cout << (*settings_) << std::endl;
+  }
 
+#ifdef LINUX_X86
   // 创建一个画图
   ORB_SLAM3::MapDrawer mpMapDrawer(strSettingsFile, settings_);
   // 创建一个 tracker
   ORB_SLAM3::Tracking tracker(settings_, &mpMapDrawer);
+  // Viewer for point cloud
+  viewer::Viewer main_viewer(480, 640, "pcl", &mpMapDrawer);
+  main_viewer.setInputCloud(mapPoints);
+  std::thread display_loop;
+  display_loop = std::thread(&viewer::Viewer::run, &main_viewer);
+#else
+  ORB_SLAM3::Tracking tracker(settings_);
+#endif
+  
 
 
-    // Viewer for point cloud
-    viewer::Viewer main_viewer(480, 640, "pcl", &mpMapDrawer);
-    main_viewer.setInputCloud(mapPoints);
-    std::thread display_loop;
-    display_loop = std::thread(&viewer::Viewer::run, &main_viewer);
 
-  /*** Process for each frame ***/
-  int32_t frame_cnt = 0;
-  cv::namedWindow("raw_depth", 0);
-  cv::namedWindow("rgb_img", 0);
+  // /*** Process for each frame ***/
+  // int32_t frame_cnt = 0;
+  // cv::namedWindow("raw_depth", 0);
+  // cv::namedWindow("rgb_img", 0);
 
   while (1) {
     // DEPTH
@@ -177,6 +179,7 @@ int main(int argc, char** argv) {
       for (int i = 0; i < tracker.mLastFrame.mvKeysUn.size(); i++) {
         cv::circle(image_for_show, cv::Point(tracker.mLastFrame.mvKeysUn[i].pt.x, tracker.mLastFrame.mvKeysUn[i].pt.y), 3, CV_RGB(0, 255, 0), 1);
       }
+#ifdef LINUX_X86      
       // 地图点画出来
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr tmp_mapPoints = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
       static int seq = 0;
@@ -207,6 +210,7 @@ int main(int argc, char** argv) {
           mapPoints->points.emplace_back(point);
         }
       }
+#endif
       // std::cout << "points in viewer: " <<  mapPoints->points.size() << std::endl;
       cv::imshow("rgb_img", image_for_show);
       cv::waitKey(1);

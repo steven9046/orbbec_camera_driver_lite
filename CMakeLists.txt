@@ -18,6 +18,7 @@ find_package(PCL REQUIRED)
 find_package(Eigen3 REQUIRED)
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
     find_package(Pangolin 0.4 REQUIRED)
+    add_definitions(-DLINUX_X86)
 endif()
 
 # uvc libs
@@ -32,12 +33,12 @@ include_directories (${OpenCV_INCLUDE_DIRS})
 include_directories (${PCL_INCLUDE_DIRS})
 include_directories (${Eigen_INCLUDE_DIRS})
 include_directories ("${PROJECT_SOURCE_DIR}/include;${PROJECT_SOURCE_DIR}/src")
-if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
-    include_directories (${Pangolin_INCLUDE_DIRS}
-                         ${PROJECT_SOURCE_DIR}/Thirdparty/Sophus
-                         ${PROJECT_SOURCE_DIR}/Thirdparty/g2o
-                         ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2)
-endif()
+
+include_directories (${Pangolin_INCLUDE_DIRS}
+                    ${PROJECT_SOURCE_DIR}/Thirdparty/Sophus
+                    ${PROJECT_SOURCE_DIR}/Thirdparty/g2o
+                    ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2)
+
 
 # tensorflow lite
 # set(TENSORFLOW_SOURCE_DIR "/home/ss/tensorflow_src")
@@ -60,28 +61,49 @@ endif()
 # include_directories ("${PROJECT_SOURCE_DIR}/include")
 
 # message(STATUS "TENSORFLOW_SOURCE_DIR: " ${TENSORFLOW_SOURCE_DIR})
+if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+    add_executable(orbbec_camera_driver
+                    src/camera.cpp
+                    src/uvc_camera.cpp
+                    src/oni_camera.cpp
+                    src/frame.cpp
+                    src/orb/ORBextractor.cpp
+                    src/orb/ORBmatcher.cpp
+                    src/orb/Optimizer.cpp
+                    src/orb/OptimizableTypes.cpp
+                    src/orb/MapPoint.cpp
+                    src/orb/Frame.cpp
+                    src/orb/Tracking.cpp
+                    src/orb/Settings.cpp
+                    src/orb/CameraModels/Converter.cpp
+                    src/orb/CameraModels/GeometricTools.cpp
+                    src/orb/CameraModels/TwoViewReconstruction.cpp
+                    src/orb/CameraModels/Pinhole.cpp
+                    src/orb/MapDrawer.cpp
+                    src/viewer.cpp
+                    main.cpp)
+else()
+    add_executable(orbbec_camera_driver
+                    src/camera.cpp
+                    src/uvc_camera.cpp
+                    src/oni_camera.cpp
+                    src/frame.cpp
+                    src/orb/ORBextractor.cpp
+                    src/orb/ORBmatcher.cpp
+                    src/orb/Optimizer.cpp
+                    src/orb/OptimizableTypes.cpp
+                    src/orb/MapPoint.cpp
+                    src/orb/Frame.cpp
+                    src/orb/Tracking.cpp
+                    src/orb/Settings.cpp
+                    src/orb/CameraModels/Converter.cpp
+                    src/orb/CameraModels/GeometricTools.cpp
+                    src/orb/CameraModels/TwoViewReconstruction.cpp
+                    src/orb/CameraModels/Pinhole.cpp
+                    main.cpp
+                    )
+endif()
 
-add_executable(orbbec_camera_driver
-                src/camera.cpp
-                src/uvc_camera.cpp
-                src/oni_camera.cpp
-                src/viewer.cpp
-                src/frame.cpp
-                src/orb/ORBextractor.cpp
-                src/orb/ORBmatcher.cpp
-                src/orb/Optimizer.cpp
-                src/orb/OptimizableTypes.cpp
-                src/orb/MapPoint.cpp
-                src/orb/Frame.cpp
-                src/orb/Tracking.cpp
-                src/orb/Settings.cpp
-                src/orb/CameraModels/Converter.cpp
-                src/orb/CameraModels/GeometricTools.cpp
-                src/orb/CameraModels/TwoViewReconstruction.cpp
-                src/orb/CameraModels/Pinhole.cpp
-                src/orb/MapDrawer.cpp
-                main.cpp
-                )
 # # For InferenceHelper
 # set(INFERENCE_HELPER_DIR ${CMAKE_CURRENT_LIST_DIR}/src/InferenceHelper/)
 # set(INFERENCE_HELPER_ENABLE_TFLITE ON CACHE BOOL "TFLITE")
