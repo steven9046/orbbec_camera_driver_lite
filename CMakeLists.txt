@@ -139,6 +139,6 @@ if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
                             ${Pangolin_LIBRARIES})
 endif()
 
-file(COPY ${CMAKE_CURRENT_LIST_DIR}/resource DESTINATION ${CMAKE_BINARY_DIR}/)
-add_definitions(-DRESOURCE_DIR="${CMAKE_BINARY_DIR}/resource/")
+# file(COPY ${CMAKE_CURRENT_LIST_DIR}/resource DESTINATION ${CMAKE_BINARY_DIR}/)
+# add_definitions(-DRESOURCE_DIR="${CMAKE_BINARY_DIR}/resource/")
                     
