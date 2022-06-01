@@ -23,7 +23,7 @@
 #include <lib_uvc/UVCCameraConfig.h>
 #include <lib_uvc/libuvc.h>
 
-#include <opencv4/opencv2/opencv.hpp>
+#include <opencv2/opencv.hpp>
 
 enum State {
   kInitial = 0,

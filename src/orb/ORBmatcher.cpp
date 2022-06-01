@@ -21,7 +21,7 @@
 
 #include<limits.h>
 
-#include<opencv4/opencv2/core/core.hpp>
+#include<opencv2/core/core.hpp>
 
 #include "DBoW2/FeatureVector.h"
 

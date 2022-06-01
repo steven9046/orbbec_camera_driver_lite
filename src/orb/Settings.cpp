@@ -23,8 +23,8 @@
 
 // #include "System.h"
 
-#include <opencv4/opencv2/core/persistence.hpp>
-#include <opencv4/opencv2/core/eigen.hpp>
+#include <opencv2/core/persistence.hpp>
+#include <opencv2/core/eigen.hpp>
 
 #include <iostream>
 

@@ -24,9 +24,9 @@
 //#define REGISTER_TIMES
 
 #include <sophus/se3.hpp>
-#include <opencv4/opencv2/core/core.hpp>
-#include <opencv4/opencv2/imgproc/imgproc.hpp>
-#include <opencv4/opencv2/features2d/features2d.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/features2d/features2d.hpp>
 
 #include "CameraModels/GeometricCamera.h" // 这个几何相机是用来三角化的
 
