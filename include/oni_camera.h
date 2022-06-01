@@ -29,7 +29,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 // openCV
-#include <opencv4/opencv2/opencv.hpp>
+#include <opencv2/opencv.hpp>
 // Eigen
 #include "Eigen/Core"
 

@@ -27,7 +27,7 @@
 
 // #include "SerializationUtils.h"
 
-#include <opencv4/opencv2/core/core.hpp>
+#include <opencv2/core/core.hpp>
 // #include <mutex>
 
 // 
