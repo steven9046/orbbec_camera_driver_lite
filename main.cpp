@@ -34,7 +34,7 @@
 #endif
 
 // for opencv
-#include <opencv4/opencv2/opencv.hpp>
+#include <opencv2/opencv.hpp>
 
 // for tflite
 #include "common_helper_cv.h"

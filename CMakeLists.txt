@@ -118,9 +118,9 @@ endif()
 # target_link_libraries(orbbec_camera_driver CommonHelper)
 
 # Link ImageProcessor module
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/src/image_processor image_processor)
-target_include_directories(orbbec_camera_driver PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src/image_processor)
-target_link_libraries(orbbec_camera_driver ImageProcessor)
+# add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/src/image_processor image_processor)
+# target_include_directories(orbbec_camera_driver PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src/image_processor)
+# target_link_libraries(orbbec_camera_driver ImageProcessor)
 
 target_link_libraries(orbbec_camera_driver 
                     ${OpenCV_LIBRARIES}
