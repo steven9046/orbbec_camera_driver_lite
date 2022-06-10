@@ -15,7 +15,7 @@
  *  limitations under the License.                                            *
  *                                                                            *
  *****************************************************************************/
-// #define LINUX_X86
+#define LINUX_X86
 #ifndef LINUX_X86
 #define LINUX_ARM
 #endif
@@ -41,11 +41,14 @@
 #include "image_processor.h"
 
 // for orb
-#include "src/orb/Frame.h"
 #include "src/orb/ORBextractor.h"
-#include "src/orb/Settings.h"
+#include "src/orb/Frame.h"
 #include "src/orb/Tracking.h"
+#include "src/orb/Settings.h"
+#include "src/orb/MapDrawer.h"
 
+// for zmq
+#include "libzmq/zmq.hpp"
 /*** Macro ***/
 #define WORK_DIR RESOURCE_DIR
 #define DEFAULT_INPUT_IMAGE RESOURCE_DIR "/kite.jpg"
@@ -80,6 +83,17 @@ int main(int argc, char** argv) {
   oni_camera.getCameraParams();
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr mapPoints = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
+
+  void* context = zmq_ctx_new();
+  assert(context != NULL);
+
+  void* socket = zmq_socket(context, ZMQ_PUB);
+  assert(socket != NULL);
+
+  int ret = zmq_bind(socket, "tcp://127.0.0.1:5555");
+  assert(ret == 0);
+
+  int zmq_i = 0;
 
   // /* Initialize image processor library */
   // ImageProcessor::InputParam input_param = {WORK_DIR, 4};
@@ -215,9 +229,15 @@ int main(int argc, char** argv) {
       cv::imshow("rgb_img", image_for_show);
       cv::waitKey(1);
     }
-
+    char szBuf[1024] = {0};
+    snprintf(szBuf, sizeof(szBuf), "server i=%d", zmq_i);
+    ret = zmq_send(socket, szBuf, strlen(szBuf) + 1, 0);
+    zmq_i++;
+    printf("publishing message[ %d ]\n", zmq_i);
     usleep(100);
   }
+  zmq_close (socket);
+  zmq_ctx_destroy (context);
   return 0;
 }
 
