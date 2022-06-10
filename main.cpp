@@ -49,6 +49,9 @@
 
 // for zmq
 #include "libzmq/zmq.hpp"
+// for flatbuffers
+#include "camera_generated.h"
+
 /*** Macro ***/
 #define WORK_DIR RESOURCE_DIR
 #define DEFAULT_INPUT_IMAGE RESOURCE_DIR "/kite.jpg"
