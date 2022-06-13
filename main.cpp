@@ -51,6 +51,7 @@
 #include "libzmq/zmq.hpp"
 // for flatbuffers
 #include "camera_generated.h"
+#include <fstream>
 
 /*** Macro ***/
 #define WORK_DIR RESOURCE_DIR
@@ -67,7 +68,7 @@
 #define THD 40.0
 
 void do_something(cv::Mat& input_img, std::vector<cv::KeyPoint>& key_points, int threshold);
-
+void zmq_msg_buffer_free(void* data, void* hint) { delete[] static_cast<uint8_t*>(data); }
 // Input camera bus number to choose a specific camera. You can use "lsusb" to check which bus your camera is on.
 // https://www.cnblogs.com/avril/archive/2010/03/22/1691477.html
 int main(int argc, char** argv) {
@@ -87,16 +88,53 @@ int main(int argc, char** argv) {
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr mapPoints = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
 
-  void* context = zmq_ctx_new();
-  assert(context != NULL);
+  // // zmq
+  // void* context = zmq_ctx_new();
+  // assert(context != NULL);
+  // void* socket = zmq_socket(context, ZMQ_PUB);
+  // assert(socket != NULL);
+  // int ret = zmq_bind(socket, "tcp://127.0.0.1:5555");
+  // assert(ret == 0);
+  // int zmq_i = 0;
 
-  void* socket = zmq_socket(context, ZMQ_PUB);
-  assert(socket != NULL);
-
-  int ret = zmq_bind(socket, "tcp://127.0.0.1:5555");
-  assert(ret == 0);
-
+  // 创建一个上下文
+  // void* context = zmq_ctx_new();
+  // assert(context != NULL);
+  zmq::context_t ctx_(1); // 必须这样创建上下文才行
+  // 这里是用智能指针来创建一个套接字
+  std::unique_ptr<zmq::socket_t> pub_;
+  pub_.reset(new zmq::socket_t(ctx_, ZMQ_PUB));
+  pub_->bind("tcp://127.0.0.1:5555");
   int zmq_i = 0;
+
+  // // flatbuffers
+  // // 序列化
+  // // 创建一个builder
+  // flatbuffers::FlatBufferBuilder builder;
+  // // auto Camera = new Message::Camera; // 默认构造函数被删除了
+  // // 创建内部格式数据
+  // auto name = builder.CreateString("Orbbec");
+  // float fx = 454.343;
+  // float fy = 454.343;
+  // float cx = 327.461;
+  // float cy = 246.672;  
+  // float k1 = 0.0552932;  
+  // float k2 = -0.0753816;  
+  // float k3 = 0.;
+  // // 创建对象
+  // auto camera = Message::CreateCamera(builder, name, fx, fy, cx, cy, k1, k2, k3);
+  // builder.Finish(camera);
+  // // 获取数据区指针与大小
+  // uint8_t* buf = builder.GetBufferPointer();
+  // int size = builder.GetSize();
+  // // 构建zmq消息(这里不太清楚为什么选择这种)
+  // zmq::message_t msg(buf, size, zmq_msg_buffer_free, nullptr);
+  // pub_->send(msg);
+
+  // // 测试保存为二进制文件
+  // std::ofstream output("camera.message", std::ofstream::binary);
+  // output.write((const char*)buf, size);
+  // output.close();
 
   // /* Initialize image processor library */
   // ImageProcessor::InputParam input_param = {WORK_DIR, 4};
@@ -154,8 +192,6 @@ int main(int argc, char** argv) {
 #else
   ORB_SLAM3::Tracking tracker(settings_);
 #endif
-  
-
 
 
   // /*** Process for each frame ***/
@@ -234,13 +270,15 @@ int main(int argc, char** argv) {
     }
     char szBuf[1024] = {0};
     snprintf(szBuf, sizeof(szBuf), "server i=%d", zmq_i);
-    ret = zmq_send(socket, szBuf, strlen(szBuf) + 1, 0);
+    // ret = zmq_send(socket, szBuf, strlen(szBuf) + 1, 0);
+    zmq::message_t msg(szBuf, sizeof(szBuf));
+    pub_->send(msg);
     zmq_i++;
     printf("publishing message[ %d ]\n", zmq_i);
     usleep(100);
   }
-  zmq_close (socket);
-  zmq_ctx_destroy (context);
+  // zmq_close (socket);
+  // zmq_ctx_destroy (context);
   return 0;
 }
 
