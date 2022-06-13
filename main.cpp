@@ -107,34 +107,39 @@ int main(int argc, char** argv) {
   pub_->bind("tcp://127.0.0.1:5555");
   int zmq_i = 0;
 
-  // // flatbuffers
-  // // 序列化
-  // // 创建一个builder
-  // flatbuffers::FlatBufferBuilder builder;
-  // // auto Camera = new Message::Camera; // 默认构造函数被删除了
-  // // 创建内部格式数据
-  // auto name = builder.CreateString("Orbbec");
-  // float fx = 454.343;
-  // float fy = 454.343;
-  // float cx = 327.461;
-  // float cy = 246.672;  
-  // float k1 = 0.0552932;  
-  // float k2 = -0.0753816;  
-  // float k3 = 0.;
-  // // 创建对象
-  // auto camera = Message::CreateCamera(builder, name, fx, fy, cx, cy, k1, k2, k3);
-  // builder.Finish(camera);
-  // // 获取数据区指针与大小
-  // uint8_t* buf = builder.GetBufferPointer();
-  // int size = builder.GetSize();
-  // // 构建zmq消息(这里不太清楚为什么选择这种)
-  // zmq::message_t msg(buf, size, zmq_msg_buffer_free, nullptr);
-  // pub_->send(msg);
+  // flatbuffers
+  // 序列化
+  // 创建一个builder
+  flatbuffers::FlatBufferBuilder builder;
+  // auto Camera = new Message::Camera; // 默认构造函数被删除了
+  // 创建内部格式数据
+  auto name = builder.CreateString("Orbbec");
+  float fx = 454.343;
+  float fy = 454.343;
+  float cx = 327.461;
+  float cy = 246.672;  
+  float k1 = 0.0552932;  
+  float k2 = -0.0753816;  
+  float k3 = 0.;
+  // 创建对象
+  auto camera = Message::CreateCamera(builder, name, fx, fy, cx, cy, k1, k2, k3);
+  builder.Finish(camera);
+  // 获取数据区指针与大小
+  uint8_t* buf = builder.GetBufferPointer();
+  int size = builder.GetSize();
+  // 构建zmq消息
+  // zmq::message_t msg(buf, size);
 
-  // // 测试保存为二进制文件
-  // std::ofstream output("camera.message", std::ofstream::binary);
-  // output.write((const char*)buf, size);
-  // output.close();
+  // // 读取数据
+  // auto data = (uint8_t*)msg.data();
+  // // 反序列化
+  // std::unique_ptr<Message::CameraT> cameraT = Message::UnPackCamera(data);
+  // std::cout << "deserialized name : " <<cameraT->name << std::endl;
+  // std::cout << "deserialized fx: " <<cameraT->fx << std::endl;
+  // std::cout << "deserialized fy: " <<cameraT->fy << std::endl;
+  // std::cout << "deserialized cx: " <<cameraT->cx << std::endl;
+  // std::cout << "deserialized cy: " <<cameraT->cy << std::endl;
+
 
   // /* Initialize image processor library */
   // ImageProcessor::InputParam input_param = {WORK_DIR, 4};

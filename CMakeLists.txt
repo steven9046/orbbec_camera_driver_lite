@@ -150,6 +150,12 @@ if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
                             ${Pangolin_LIBRARIES})
 endif()
 
+add_executable(reciever reciever.cpp)
+target_link_libraries(reciever 
+                    ${ZMQ_LIBS}
+                    ${FLATBUFFERS_LIBS}
+                    )
+
 file(COPY ${CMAKE_CURRENT_LIST_DIR}/resource DESTINATION ${CMAKE_BINARY_DIR}/)
 add_definitions(-DRESOURCE_DIR="${CMAKE_BINARY_DIR}/resource/")
                     
