@@ -25,9 +25,9 @@
 // camera
 #include <camera.h>
 #include <openni2/OpenNI.h>
-// PCL
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
+// // PCL
+// #include <pcl/point_cloud.h>
+// #include <pcl/point_types.h>
 // openCV
 #include <opencv4/opencv2/opencv.hpp>
 // Eigen
@@ -54,8 +54,8 @@ class OniCamera : public Camera {
   OniCamera();
   ~OniCamera();
   bool oniEnvironmentInitialize();
-  void openCamera();
-  void closeCamera();
+  void openCamera() override;
+  void closeCamera() override;
 
   // openni camera menmebers
   openni::Status oni_rc_;
@@ -105,7 +105,7 @@ class OniCamera : public Camera {
    * @brief Generate point cloud using PCL.
    * @param rgb_frame We can register point cloud with a rgb image.
    */
-  void generatePointCloud(const cv::Mat& rgb_frame);
+  // void generatePointCloud(const cv::Mat& rgb_frame);
 
   /**
    * @brief Raw Depth in not regisitered to RGB. Create a Depth Mat here that are regisitered.
@@ -120,7 +120,7 @@ class OniCamera : public Camera {
   Eigen::Matrix<float,4,4> mRT;
   Eigen::Matrix<float,3,3> mR;
   Eigen::Matrix<float,3,1> mT;
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud_;  // point cloud generated. need to init or will crash.
+  // pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud_;  // point cloud generated. need to init or will crash.
 };
 // }  // namespace oni_camera
 #endif

@@ -21,6 +21,12 @@
 #pragma once
 #include <iostream>
 
+/**
+ * @brief 定义相机接口
+ * 1. 打开
+ * 2. 关闭 
+ */
+
 // namespace camera {
 class Camera {
  public:

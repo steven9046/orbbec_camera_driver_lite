@@ -32,3 +32,11 @@
          头文件里的那些 unpack pack 函数是用来干什么的？
          unpack 是把 flatbuffer 结构体反序列化为 c++ 的对象，反序列化以后就按照 c++ 对象使用就可以了
     * e. unpack 传入数据区指针是 void*， 之前一直段错误是因为把这个指针转成 uint8_t 了，这是不行的
+
+## v2.2.0 @2022.6.10 ##
+* 1. Eigen3 的 CMakeList 写法
+    竟然都是大写
+    find_package(Eigen3 REQUIRED)
+    include_directories (${EIGEN3_INCLUDE_DIRS})
+* 2. 驱动部分只读取数据，不生成点云
+* 3. 如何在别的节点里找到本节点生成的动态库，findpackage的原理
