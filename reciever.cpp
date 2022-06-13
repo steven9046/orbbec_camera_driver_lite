@@ -89,21 +89,25 @@ int main(int argc, char** argv) {
     zmq::message_t zmq_msg;
     sub_->recv(&zmq_msg);
     // zmqmessage 里的数据拿出来， .data() 返回的是个 void*, 这里转成char*
-    // auto data = (uint8_t*)zmq_msg.data();
-    // 反序列化
-    // std::unique_ptr<Message::CameraT> cameraT = Message::UnPackCamera(data);
+    auto data = zmq_msg.data();
+    // 反序列化，这个默认传入参数是void*
+    std::unique_ptr<Message::CameraT> cameraT = Message::UnPackCamera(data);
 
-    // std::cout << "name: " << *(camera->name()) << std::endl;
-    auto data = (char*)zmq_msg.data();
+    std::cout << "deserialized name : " <<cameraT->name << std::endl;
+    std::cout << "deserialized fx: " <<cameraT->fx << std::endl;
+    std::cout << "deserialized fy: " <<cameraT->fy << std::endl;
+    std::cout << "deserialized cx: " <<cameraT->cx << std::endl;
+    std::cout << "deserialized cy: " <<cameraT->cy << std::endl;
+    // auto data = (char*)zmq_msg.data();
     auto size = zmq_msg.size();
     // for(int i = 0; i < )
     // {
     // printf("Recv:%s\n", data[0]);
     // }
-    std::cout << "size: " << size << std::endl;
-    for(int i = 0; i < size; i ++){
-      std::cout << data[i];
-    }
+    // std::cout << "size: " << size << std::endl;
+    // for(int i = 0; i < size; i ++){
+    //   std::cout << data[i];
+    // }
     printf("\n");
 
     printf("received message!\n");

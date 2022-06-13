@@ -127,9 +127,9 @@ int main(int argc, char** argv) {
   // 获取数据区指针与大小
   uint8_t* buf = builder.GetBufferPointer();
   int size = builder.GetSize();
-  // 构建zmq消息
+  // // 构建zmq消息
   // zmq::message_t msg(buf, size);
-
+  // std::cout << "messageg size : !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << msg.size() << std::endl;
   // // 读取数据
   // auto data = (uint8_t*)msg.data();
   // // 反序列化
@@ -273,10 +273,12 @@ int main(int argc, char** argv) {
       cv::imshow("rgb_img", image_for_show);
       cv::waitKey(1);
     }
-    char szBuf[1024] = {0};
-    snprintf(szBuf, sizeof(szBuf), "server i=%d", zmq_i);
-    // ret = zmq_send(socket, szBuf, strlen(szBuf) + 1, 0);
-    zmq::message_t msg(szBuf, sizeof(szBuf));
+    // char szBuf[1024] = {0};
+    // snprintf(szBuf, sizeof(szBuf), "server i=%d", zmq_i);
+    // // ret = zmq_send(socket, szBuf, strlen(szBuf) + 1, 0);
+    // zmq::message_t msg(szBuf, sizeof(szBuf));
+    zmq::message_t msg(buf, size);
+    // std::cout << "messageg size : " << msg.size() << std::endl;
     pub_->send(msg);
     zmq_i++;
     printf("publishing message[ %d ]\n", zmq_i);

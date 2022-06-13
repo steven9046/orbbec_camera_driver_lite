@@ -19,8 +19,9 @@
         static void zmq_msg_buffer_free(void* data, void* hint) { delete[] static_cast<uint8_t*>(data); }
         应该是一个释放内存的函数，但是 delete 要和 new 配套使用，如果 delete 了不是 new 出来的东西就会报这个错误
         我们这里的message不是new出来的，肯定会报错，看了一下 message_t 的构造函数，有直接给数据就可以的，换了一下不报错了
-    * b. 
-    
+    * b. 在主循环里发送一次message以后就需要重新构建message再发送了，要不然这个message就无了，像个消耗品一样
+
+
 * 4. 添加一个订阅端
     * a. 和发布端差不多，谁bind谁connect没有硬性要求
     * b. 需要设置 setsockopt ,否则无法接收消息
@@ -29,4 +30,5 @@
     * d. 如果读取 flatbuffers 结构体里的数据
          直接返回的 name() 不是string， 而是flatbuffers::string
          头文件里的那些 unpack pack 函数是用来干什么的？
-    
+         unpack 是把 flatbuffer 结构体反序列化为 c++ 的对象，反序列化以后就按照 c++ 对象使用就可以了
+    * e. unpack 传入数据区指针是 void*， 之前一直段错误是因为把这个指针转成 uint8_t 了，这是不行的
