@@ -33,10 +33,37 @@
          unpack 是把 flatbuffer 结构体反序列化为 c++ 的对象，反序列化以后就按照 c++ 对象使用就可以了
     * e. unpack 传入数据区指针是 void*， 之前一直段错误是因为把这个指针转成 uint8_t 了，这是不行的
 
-## v2.2.0 @2022.6.10 ##
+## v2.1.0 @2022.6.10 ##
 * 1. Eigen3 的 CMakeList 写法
     竟然都是大写
     find_package(Eigen3 REQUIRED)
     include_directories (${EIGEN3_INCLUDE_DIRS})
 * 2. 驱动部分只读取数据，不生成点云
 * 3. 如何在别的节点里找到本节点生成的动态库，findpackage的原理
+
+## v2.1.1 @2022.6.10 ##
+**编写通信功能包**
+* 1. 编写 base
+    * a. topic to port 先写个固定的充数 , base 的主要功能就是这个
+    * b. 把根据 topic 找 port 实现了
+    * c. 所有套接字共用一个 contex
+
+* 2. 编写publisher
+    * a. 初始化时接收参数 topic ，转化成 port
+    * b. 有模板函数，所以写成了hpp
+
+* 3. 编写subscriber
+    * a. 因为要接收不同消息，所以采用模板编程，不能分离编译，所以都写在头文件里
+    * b. 初始化需要传入参数为 topic 
+         根据topic去map里找到相应的端口号,保存到成员变量里
+    * c. 开启解析线程(这里为什么要用多线程？)
+         感觉并不需要，直接在主线程里进行 Loop 就可以了
+    * d. 把boost里的都替换成了std里的
+    * e. std::thread 用的实现到了 pthread， CMakeList里加一个
+         target_link_libraries(project_name
+                                pthread)
+    * f. 改成hpp
+    * g. 析构时需要把线程join了
+**测试节点可以通信，接下来需要进行消息封装**
+
+
