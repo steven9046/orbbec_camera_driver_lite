@@ -16,7 +16,6 @@ configure_file (
 find_package(OpenCV REQUIRED)
 find_package(PCL REQUIRED)
 find_package(Eigen3 REQUIRED)
-
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
     find_package(Pangolin 0.4 REQUIRED)
     add_definitions(-DLINUX_X86)
@@ -30,13 +29,9 @@ set(UVC_LIBS "${UVC_LIBS_DIR}/libuvc.so")
 set(OPENNI2_LIBS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/${CMAKE_SYSTEM_PROCESSOR}/openni2)
 set (OPENNI2_LIBS "${OPENNI2_LIBS_DIR}/libOpenNI2.so;${OPENNI2_LIBS_DIR}/OpenNI2/Drivers/liborbbec.so")# 这个路径是固定的，不是这个目录结构OpenNI2/Drivers/lib*.so就找不到
 
-# zmq libs
+# uvc libs
 set(ZMQ_LIBS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/${CMAKE_SYSTEM_PROCESSOR}/libzmq)
 set(ZMQ_LIBS "${ZMQ_LIBS_DIR}/libzeromq.so")
-
-# flatbuffers libs
-set(FLATBUFFERS_LIBS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/${CMAKE_SYSTEM_PROCESSOR}/libflatbuffers)
-set(FLATBUFFERS_LIBS "${FLATBUFFERS_LIBS_DIR}/libflatbuffers.so")
 
 include_directories (${OpenCV_INCLUDE_DIRS})
 include_directories (${PCL_INCLUDE_DIRS})
@@ -139,7 +134,6 @@ target_link_libraries(orbbec_camera_driver
                     ${ZMQ_LIBS}
                     ${OPENNI2_LIBS}
                     ${TFLITE_LIBS}
-                    ${FLATBUFFERS_LIBS}
                     ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.so
                     ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
                     -lcrypto
@@ -149,12 +143,6 @@ if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
     target_link_libraries(orbbec_camera_driver
                             ${Pangolin_LIBRARIES})
 endif()
-
-add_executable(reciever reciever.cpp)
-target_link_libraries(reciever 
-                    ${ZMQ_LIBS}
-                    ${FLATBUFFERS_LIBS}
-                    )
 
 file(COPY ${CMAKE_CURRENT_LIST_DIR}/resource DESTINATION ${CMAKE_BINARY_DIR}/)
 add_definitions(-DRESOURCE_DIR="${CMAKE_BINARY_DIR}/resource/")

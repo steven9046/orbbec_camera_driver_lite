@@ -20,7 +20,7 @@ class ZMQPublisher : public ZMQBase {
 
   void init_publisher(std::string topic_name);
   template <typename T>
-  void publish(const T& message);
+  void publish(T& message);
 };
 
 ZMQPublisher::ZMQPublisher() {}
@@ -46,7 +46,7 @@ void ZMQPublisher::init_publisher(std::string topic_name) {
 // 类模板不能分离编译
 // 这里最好是传入序列化好的数据
 template <typename T>  // 只有这一个函数用到了模板，所有不能分成声明和
-void ZMQPublisher::publish(const T& message) {
+void ZMQPublisher::publish(T& message) {
   static int i = 0;
   if (pub_) {
     //   uint32_t serial_size = ros::serialization::serializationLength(message);
@@ -54,12 +54,12 @@ void ZMQPublisher::publish(const T& message) {
 
     //   ros::serialization::OStream stream(buffer, serial_size);
     //   ros::serialization::serialize(stream, message);
-    char szBuf[1024] = {0};
-    snprintf(szBuf, sizeof(szBuf), "server i=%d", i);
-    zmq::message_t msg(szBuf, sizeof(szBuf));  //, zmq_msg_buffer_free, nullptr
-    pub_->send(msg);
+    // char szBuf[1024] = {0};
+    // snprintf(szBuf, sizeof(szBuf), "server i=%d", i);
+    // zmq::message_t msg(szBuf, sizeof(szBuf));  //, zmq_msg_buffer_free, nullptr
+    std::cout << message.size() << std::endl;
+    pub_->send(message);
     //   printf("publishin : %s\n", szBuf);
-    std::cout << szBuf << std::endl;
     i++;
   } else {
     printf("Cannot publish before initialization of the publisher.\n");
