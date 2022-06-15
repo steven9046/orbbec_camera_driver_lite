@@ -10,8 +10,8 @@ namespace zmq_communicater {
 /**
  * @brief
  * contex 在 base 里已经有了，这里只需要设置套接字就行了
- *
  */
+
 class ZMQPublisher : public ZMQBase {
  public:
   ZMQPublisher();
@@ -19,15 +19,20 @@ class ZMQPublisher : public ZMQBase {
   std::unique_ptr<zmq::socket_t> pub_;
 
   void init_publisher(std::string topic_name);
-  template <typename T>
-  void publish(T& message);
+  // template <typename T>
+  void publish(zmq::message_t& message);
 };
 
 ZMQPublisher::ZMQPublisher() {}
 ZMQPublisher::~ZMQPublisher() {}
 
+/**
+ * @brief 
+ * @param [in] topic_name   话题名
+ * 1. 根据话题名从表里查找到端口号
+ * 2. 创建套接字，绑定端口
+ */
 void ZMQPublisher::init_publisher(std::string topic_name) {
-  // printf("Initializing ZMQPublisher... address: %s\n",socket_address.c_str());
   std::string socket_address = get_socket_str_from_topic_name(topic_name);
   std::cout << "Initializing ZMQPublisher..." << std::endl;
   std::cout << "Address: " << socket_address << std::endl;
@@ -43,23 +48,18 @@ void ZMQPublisher::init_publisher(std::string topic_name) {
   std::cout << "ZMQPublisher Initialized!" << std::endl;
 }
 
-// 类模板不能分离编译
-// 这里最好是传入序列化好的数据
-template <typename T>  // 只有这一个函数用到了模板，所有不能分成声明和
-void ZMQPublisher::publish(T& message) {
+/**
+ * @brief 模板不能分离编译
+ * @param [in] message   待发送消息
+ * 这里需要传入的是序列化好的消息，就是zmq消息，不用使用模板
+ */
+// template <typename T>
+void ZMQPublisher::publish(zmq::message_t& message) {
   static int i = 0;
   if (pub_) {
-    //   uint32_t serial_size = ros::serialization::serializationLength(message);
-    //   uint8_t* buffer = new uint8_t[serial_size];
-
-    //   ros::serialization::OStream stream(buffer, serial_size);
-    //   ros::serialization::serialize(stream, message);
-    // char szBuf[1024] = {0};
-    // snprintf(szBuf, sizeof(szBuf), "server i=%d", i);
-    // zmq::message_t msg(szBuf, sizeof(szBuf));  //, zmq_msg_buffer_free, nullptr
-    std::cout << message.size() << std::endl;
+    // std::cout << message.size() << std::endl;
+    printf("Publishing count [ %d ]\n", i);
     pub_->send(message);
-    //   printf("publishin : %s\n", szBuf);
     i++;
   } else {
     printf("Cannot publish before initialization of the publisher.\n");

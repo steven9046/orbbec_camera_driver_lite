@@ -6,6 +6,7 @@
 #include <camera_generated.h>
 
 int main(){
+    // 创建并初始化发布器
     printf("Testing ZMQPublisher...\n");
     zmq_communicater::ZMQPublisher pub_;
     pub_.read_zmq_topic_to_port_file();
@@ -31,8 +32,8 @@ int main(){
     uint8_t* buf = builder.GetBufferPointer();
     int size = builder.GetSize();
 
+    // 发布消息
     while(1){
-        // std::string test_message = "testing";
         zmq::message_t msg(buf, size);
         pub_.publish(msg);
         sleep(1);
