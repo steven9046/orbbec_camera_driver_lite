@@ -6,23 +6,17 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 # find_package(OpenCV REQUIRED)
 # find_package(Eigen3 REQUIRED)
 
-# 得到上级目录
-string(REGEX REPLACE "(.+)\\zmq_communicater.*" "\\1" TOP_DIR ${PROJECT_SOURCE_DIR})
-message(STATUS "TOP_DIR: " ${TOP_DIR})
+# 得到上级目录,设置搜索路径(findpackage),设置安装路径(prefix)
+get_filename_component(TOP_DIR "${CMAKE_CURRENT_LIST_DIR}/../" ABSOLUTE)
+set(flatbuffer_message_DIR ${TOP_DIR}/install/FlatbuffersMessage/lib/cmake/flatbuffer_message)
+find_package(flatbuffer_message 1.0 REQUIRED)
 
 # uvc libs
 set(ZMQ_LIBS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/libzmq)
 set(ZMQ_LIBS "${ZMQ_LIBS_DIR}/libzeromq.so")
 
-# flatbuffers_message libs
-set(FLATBUFFERS_LIBS_DIR ${TOP_DIR}message/libs/libflatbuffers)
-set(FLATBUFFERS_INCLUDE_DIR ${TOP_DIR}message/include)
-set(FLATBUFFERS_LIBS "${FLATBUFFERS_LIBS_DIR}/libflatbuffers.so")
-
-
-
 include_directories ("${PROJECT_SOURCE_DIR}/include;${PROJECT_SOURCE_DIR}/src")
-include_directories (${FLATBUFFERS_INCLUDE_DIR})
+include_directories (${flatbuffer_message_INCLUDE_DIR})
 
 # 构建驱动库
 add_library(zmq_communicater SHARED
@@ -33,7 +27,7 @@ add_library(zmq_communicater SHARED
 
 target_link_libraries(zmq_communicater 
                     ${ZMQ_LIBS}
-                    ${FLATBUFFERS_LIBS}
+                    ${flatbuffer_message_LIBS}
                     )
 
 # 构建测试节点
@@ -48,6 +42,8 @@ target_link_libraries(zmq_subscriber_test_node
                         zmq_communicater
                         pthread)
 
-# file(COPY ${CMAKE_CURRENT_LIST_DIR}/resource DESTINATION ${CMAKE_BINARY_DIR}/)
-# add_definitions(-DRESOURCE_DIR="${CMAKE_BINARY_DIR}/resource/")
-                    
+set(CMAKE_INSTALL_PREFIX ${TOP_DIR}install/zmq_communicater)    
+install(TARGETS zmq_communicater zmq_publisher_test_node zmq_subscriber_test_node
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib/static)

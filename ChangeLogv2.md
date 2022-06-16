@@ -80,3 +80,56 @@
     * d. 那这样还不如把反序列化放到外部类里来做，反正都是调用外部函数
     * e. 最后通过多添加一个模板参数，实现在内部反序列化
 
+## v2.1.3 @2022.6.16 ##
+* 1. 给 orbbec_camera_node 添加 publisher
+    * a. 各种头文件包含也太不方便了，得研究一下  CMake catkin 是怎么管理这些东西的
+    * b. CMake 的 Install
+        1. 设置 CMAKE_INSTALL_PREFIX
+        2. 设置 install 选项  
+        3. 执行 make install
+    * c. install 命令
+        1. TARGETS 后是所有自己想安装的东西，后边会根据 targets 的类别自动安装到相应的目录下边
+            install(TARGETS zmq_communicater zmq_publisher_test_node zmq_subscriber_test_node
+            RUNTIME DESTINATION bin
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib/static)
+        2. 如果自己还想安装一些特定的文件可以使用
+            install(DIRECTORY include/ DESTINATION include)
+            带 / 是安装 include文件夹下的文件到 include  -->  include/*
+            不带 / 是安装整个文件夹到 include 下         -->  include/include/*
+            https://blog.csdn.net/qq_38410730/article/details/102837401
+
+* 2. 如何使生成的包可以被其他包使用
+    * a. 生成 .cmake 文件
+        1. install(TARGETS FlatbuffersMessage  
+            DESTINATION lib 
+            EXPORT flatbuffer_message # 并导出库信息
+            )
+            这里的 EXPORT 可以导出库信息到一个抽象对象里
+        2. install(EXPORT flatbuffer_message 
+                FILE flatbuffer_message.cmake
+                DESTINATION lib/cmake/flatbuffer_message
+                )
+            这里根据上一步生成的抽象对象生成.cmake文件
+
+    * b. 生成 Config.cmake 文件
+        上一步生成的 .cmake 文件不能被 findpackage 直接找到，
+        findpackage 需要先找到 Config.cmake 在通过这个文件找到所有需要的 .cmake (如果本项目还有其他依赖的包，也是在这里设置的)
+        1. CMake 也有许多功能模块，需要用哪个模块的时候需要 include()
+            include(CMakePackageConfigHelpers)
+        2. configure_package_config_file
+            这个可以根据 in 文件生成 Config.cmake
+        3. 编写 .in 文件
+            如果没有第三方依赖只需要包含当前包的.cmake
+            include("${CMAKE_CURRENT_LIST_DIR}/flatbuffer_message.cmake")
+            如果当前包还依赖其他第三方包，则需要写进来(不确定)
+            include(CMakeFindDependencyMacro) 
+        4. 这里还可以设置一些 .cmake 里的宏
+            例如我们这里就是把头文件路径写在这里了
+            set(flatbuffer_message_INCLUDE_DIR "${PACKAGE_PREFIX_DIR}/include")
+            (写在CMakeList里的话其他包是无法使用这个宏的)
+            (这里包含头文件应该有其他办法，例如 PUBLIC_HEADER 暂时没有尝试)
+    * c. 版本号设置
+        1. set (FlatbufferMessage_VERSION_MAJOR 1)
+           set (FlatbufferMessage_VERSION_MINOR 0)
+           这句就可以直接设置版本号了，后边的应该是让第三方引用时可以在cpp里读取版本号
