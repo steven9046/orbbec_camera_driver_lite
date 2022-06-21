@@ -133,3 +133,25 @@
         1. set (FlatbufferMessage_VERSION_MAJOR 1)
            set (FlatbufferMessage_VERSION_MINOR 0)
            这句就可以直接设置版本号了，后边的应该是让第三方引用时可以在cpp里读取版本号
+
+* 3. zmq 找包的问题
+        在test项目里试了很久 
+     * a. libzmq.so -> libzmq.so.5.1.5          编译时按照这个软链接找
+          libzmq.so.5 -> libzmq.so.5.1.5        运行时按照这个软链接找
+     * b. 我们遇到的问题是即使是
+          把 libzmq.so.5.1.5 放到源码目录里了，并且建立了相应的软链接 libzmq.so libzmq.so.5
+          但是运行时还是会有先找到 /usr/local/lib 里的 libzmq.so.5.1.5
+          把/usr/local/lib 里的库删了以后才会找到源码里的那个 libzmq.so.5.1.5
+          试了一下把名字都改成 libzeromq* ，看一下能不能解决shadow的问题，然而还是找 libzmq.so.5
+          这说明 libzmq.so.5.1.5 里边就写死了要去找 libzmq.so.5
+          看来只能是修改一下环境变量，让运行时先到自己设定的路径里去找 .so
+          加到 LD_LIBRARY_PATH 里了还是会去 /usr/local/lib 里找
+          (PATH 是可执行程序查找路径， LD_LIBRARY_PATH 是动态库查找路径)
+          这里先把系统的库删除吧
+
+* 4. 最后整理的结构,一共三个包
+     libflatbuffers -> FlatbufferMessage
+     FlatbufferMessage libzmq -> zmq_communicater 
+     FlatbufferMessage zmq_communicater -> orbbec_camera_driver
+     zmq 包里 sub 用到了反序列化的函数，已经深度绑定了，所以把 flatbuffer 和 zmq 分开的意义不大了
+     那还不如把这两个包合成一个

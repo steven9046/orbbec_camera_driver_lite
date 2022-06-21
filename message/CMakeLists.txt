@@ -7,23 +7,18 @@ set (FlatbufferMessage_VERSION_MAJOR 1)
 set (FlatbufferMessage_VERSION_MINOR 0)
 
 configure_file (
-"${PROJECT_SOURCE_DIR}/flatbuffer_messageConfig.h.in"
-"${PROJECT_BINARY_DIR}/flatbuffer_messageConfig.h"
+"${PROJECT_SOURCE_DIR}/FlatbuffersMessageConfig.h.in"
+"${PROJECT_BINARY_DIR}/FlatbuffersMessageConfig.h"
 )
 
 # 设置安装路径 /home/ss/orbbec_camera_driver/install
-# string(REGEX REPLACE "(.+)\\message.*" "\\1" TOP_DIR ${PROJECT_SOURCE_DIR})
 get_filename_component(TOP_DIR "${CMAKE_CURRENT_LIST_DIR}/../" ABSOLUTE)
-message(STATUS "TOP_DIR: " ${TOP_DIR})
 set(CMAKE_INSTALL_PREFIX ${TOP_DIR}/install/FlatbuffersMessage)
-message(STATUS "CMAKE_INSTALL_PREFIX: " ${CMAKE_INSTALL_PREFIX})
-
 
 # flatbuffers libs
 set(FLATBUFFERS_LIBS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/libflatbuffers)
 set(FLATBUFFERS_LIBS "${FLATBUFFERS_LIBS_DIR}/libflatbuffers.so")
 
-include_directories ("${PROJECT_SOURCE_DIR}/include")
 
 # 构建驱动库
 add_library(FlatbuffersMessage SHARED
@@ -34,47 +29,43 @@ target_link_libraries(FlatbuffersMessage
                     ${FLATBUFFERS_LIBS}
                     )
 
-# 下边这三句没有尝试
-# set(public_headers include/zmq.h include/zmq_utils.h)
-# set(includedir ${prefix}/${CMAKE_INSTALL_INCLUDEDIR})
-# PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT SDK)
-
-# 将库文件，可执行文件，头文件安装到指定目录
-install(TARGETS FlatbuffersMessage  
-        DESTINATION lib 
-        EXPORT flatbuffer_message # 并导出库信息
-        )
+target_include_directories (FlatbuffersMessage PUBLIC 
+                            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+                            $<INSTALL_INTERFACE:include>
+                            )
 
 install(DIRECTORY include/ DESTINATION include)
+install(DIRECTORY libs/libflatbuffers/ DESTINATION lib)
 
-#  里用库信息生成 .cmake 文件 并安装到指定位置
-install(EXPORT flatbuffer_message 
-        FILE flatbuffer_message.cmake
-        DESTINATION lib/cmake/flatbuffer_message
+# 将库文件，可执行文件，头文件安装到指定目录
+install(TARGETS FlatbuffersMessage
+        EXPORT FlatbuffersMessage # 并导出库信息
+        DESTINATION lib 
+        )
+
+install(EXPORT FlatbuffersMessage 
+        FILE FlatbuffersMessage.cmake
+        DESTINATION lib/cmake/FlatbuffersMessage
         )
 
 ## .cmake 信息
 include(CMakePackageConfigHelpers)
 
-configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/flatbuffer_messageConfig.cmake.in
-  "${CMAKE_CURRENT_BINARY_DIR}/flatbuffer_messageConfig.cmake"
-  INSTALL_DESTINATION "lib/cmake/flatbuffer_message"
+configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/FlatbuffersMessageConfig.cmake.in
+  "${CMAKE_CURRENT_BINARY_DIR}/FlatbuffersMessageConfig.cmake"
+  INSTALL_DESTINATION "lib/cmake/FlatbuffersMessage"
   NO_SET_AND_CHECK_MACRO
   NO_CHECK_REQUIRED_COMPONENTS_MACRO
 )
 
 write_basic_package_version_file(
-  "${CMAKE_CURRENT_BINARY_DIR}/flatbuffer_messageConfigVersion.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/FlatbuffersMessageConfigVersion.cmake"
   VERSION "${FlatbufferMessage_VERSION_MAJOR}.${FlatbufferMessage_VERSION_MINOR}"
   COMPATIBILITY AnyNewerVersion
 )
 
 install(FILES
-  ${CMAKE_CURRENT_BINARY_DIR}/flatbuffer_messageConfig.cmake
-  DESTINATION lib/cmake/flatbuffer_message
-)
-
-install(FILES
-  ${CMAKE_CURRENT_BINARY_DIR}/flatbuffer_messageConfigVersion.cmake
-  DESTINATION lib/cmake/flatbuffer_message
+  ${CMAKE_CURRENT_BINARY_DIR}/FlatbuffersMessageConfig.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/FlatbuffersMessageConfigVersion.cmake
+  DESTINATION lib/cmake/FlatbuffersMessage
 )

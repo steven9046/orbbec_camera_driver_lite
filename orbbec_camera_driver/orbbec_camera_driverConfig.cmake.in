@@ -1,0 +1,5 @@
+include(CMakeFindDependencyMacro)
+get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
+include("${CMAKE_CURRENT_LIST_DIR}/orbbec_camera_driver.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/orbbec_camera_driverConfigVersion.cmake")
+set(orbbec_camera_driver_INCLUDE_DIR "${PACKAGE_PREFIX_DIR}/include")

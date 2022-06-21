@@ -23,6 +23,10 @@
 #include <uvc_camera.h>
 // for opencv
 #include <opencv4/opencv2/opencv.hpp>
+// for flatbaffer message
+#include "camera_generated.h"
+// for zmq_publisher
+#include "zmq_publisher.hpp"
 
 // Input camera bus number to choose a specific camera. You can use "lsusb" to check which bus your camera is on.
 // https://www.cnblogs.com/avril/archive/2010/03/22/1691477.html
@@ -45,6 +49,30 @@ int main(int argc, char** argv) {
   cv::namedWindow("raw_depth", 0);
   cv::namedWindow("rgb_img", 0);
 
+  // 消息发布
+  zmq_communicater::ZMQPublisher pub_;
+    pub_.read_zmq_topic_to_port_file();
+    std::string topic_name = "topic_1";
+    pub_.init_publisher(topic_name);
+  // 创建消息并序列化
+  flatbuffers::FlatBufferBuilder builder;
+  // auto Camera = new Message::Camera; // 默认构造函数被删除了
+  // 创建内部格式数据
+  auto name = builder.CreateString("Orbbec");
+  float fx = 454.343;
+  float fy = 454.343;
+  float cx = 327.461;
+  float cy = 246.672;
+  float k1 = 0.0552932;
+  float k2 = -0.0753816;
+  float k3 = 0.;
+  // 创建对象
+  auto camera = Message::CreateCamera(builder, name, fx, fy, cx, cy, k1, k2, k3);
+  builder.Finish(camera);
+  // 获取数据区指针与大小
+  uint8_t* buf = builder.GetBufferPointer();
+  int size = builder.GetSize();
+
   while (1) {
     // DEPTH
     oni_camera.GetOniStreamData();
@@ -66,10 +94,12 @@ int main(int argc, char** argv) {
       cv::imshow("rgb_img", image_for_show);
       cv::waitKey(1);
     }
+    
+    zmq::message_t msg(buf, size);
+    pub_.publish(msg);
 
     usleep(100);
   }
 
   return 0;
 }
-
