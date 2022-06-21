@@ -1,6 +1,0 @@
-include(CMakeFindDependencyMacro)
-get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
-include("${CMAKE_CURRENT_LIST_DIR}/FlatbuffersMessage.cmake")
-include("${CMAKE_CURRENT_LIST_DIR}/FlatbuffersMessageConfigVersion.cmake")
-set(FlatbuffersMessage_INCLUDE_DIR "${PACKAGE_PREFIX_DIR}/include")
-set(FlatbuffersMessage_LIBRARIES "${PACKAGE_PREFIX_DIR}/lib")

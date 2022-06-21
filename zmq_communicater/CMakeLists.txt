@@ -15,12 +15,13 @@ configure_file (
 get_filename_component(TOP_DIR "${CMAKE_CURRENT_LIST_DIR}/../" ABSOLUTE)
 set(CMAKE_PREFIX_PATH ${TOP_DIR}/install)
 
-find_package(FlatbuffersMessage 1.0 REQUIRED)
-
 # zmq libs
-set(ZMQ_LIBS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs)
+set(ZMQ_LIBS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/libzmq)
 set(ZMQ_LIBS "${ZMQ_LIBS_DIR}/libzmq.so")
-message(STATUS "zmq lib dir: " ${ZMQ_LIBS})
+
+# flatbuffer libs
+set(FLABUFFERS_LIBS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/libflatbuffers)
+set(FLABUFFERS_LIBS "${FLABUFFERS_LIBS_DIR}/libflatbuffers.so")
 
 # 构建驱动库
 add_library(zmq_communicater SHARED
@@ -31,16 +32,12 @@ add_library(zmq_communicater SHARED
 
 target_link_libraries(zmq_communicater PUBLIC
                     ${ZMQ_LIBS}
+                    ${FLABUFFERS_LIBS}
                     )
 
 target_include_directories (zmq_communicater PUBLIC
                             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                             $<INSTALL_INTERFACE:include>)
-
-target_include_directories (zmq_communicater PUBLIC
-                            $<BUILD_INTERFACE:${FlatbuffersMessage_INCLUDE_DIR}>
-                            $<INSTALL_INTERFACE:include>
-                            )
 
 # 构建测试节点
 add_executable(zmq_publisher_test_node

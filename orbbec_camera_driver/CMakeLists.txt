@@ -17,13 +17,7 @@ get_filename_component(TOP_DIR "${CMAKE_CURRENT_LIST_DIR}/../" ABSOLUTE)
 set(CMAKE_PREFIX_PATH ${TOP_DIR}/install)
 
 find_package(zmq_communicater 1.0 REQUIRED)
-find_package(FlatbuffersMessage 1.0 REQUIRED)
-
 include_directories (${zmq_communicater_INCLUDE_DIR})
-include_directories (${FlatbuffersMessage_INCLUDE_DIR})
-
-# message(STATUS "zmq_communicater_include_dir: " ${zmq_communicater_INCLUDE_DIR})
-# message(STATUS "zmq_communicater_LIBS: " ${zmq_communicater_LIBRARIES})
 
 #### find general packages
 find_package(OpenCV REQUIRED)
