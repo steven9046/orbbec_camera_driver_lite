@@ -15,10 +15,6 @@
  *  limitations under the License.                                            *
  *                                                                            *
  *****************************************************************************/
-#define LINUX_X86
-#ifndef LINUX_X86
-#define LINUX_ARM
-#endif
 
 // for common
 #include <iostream>
@@ -48,7 +44,7 @@
 // #include "src/orb/MapDrawer.h"
 
 // for zmq
-#include "libzmq/zmq.hpp"
+#include <zmq_subscriber.hpp>
 // for flatbuffers
 #include "image_generated.h"
 #include <fstream>
@@ -82,7 +78,7 @@ int main(int argc, char** argv) {
   sub_->setsockopt(ZMQ_CONFLATE, &conflate, sizeof(conflate)); //只接收一个消息？
   sub_->setsockopt(ZMQ_LINGER, 0);  // ALWAYS
 
-  sub_->connect("tcp://127.0.0.1:5555");
+  sub_->connect("tcp://127.0.0.1:5000");
   int zmq_i = 0;
   printf("going into mainloop...\n");
   while(1){
@@ -92,13 +88,16 @@ int main(int argc, char** argv) {
     auto data = zmq_msg.data();
     // 反序列化，这个默认传入参数是void*
     std::unique_ptr<Message::ImageT> ImageT = Message::UnPackImage(data);
-
+    int height = ImageT->height;
+    int width = ImageT->width;
+    
     std::cout << "image size: " <<ImageT->data.size() << std::endl;
-    // std::cout << "deserialized fx: " <<cameraT->fx << std::endl;
-    // std::cout << "deserialized fy: " <<cameraT->fy << std::endl;
-    // std::cout << "deserialized cx: " <<cameraT->cx << std::endl;
-    // std::cout << "deserialized cy: " <<cameraT->cy << std::endl;
-    // auto data = (char*)zmq_msg.data();
+    // cv::Mat img(height, width, CV_8UC1, ImageT->data.begin());
+    uint8_t data_array[height*width];
+    for(int i = 0; i < ImageT->data.size(); i ++){
+      data_array[i] = ImageT->data[i];
+    }
+    cv::Mat img(height, width, CV_8UC1, data_array);
     auto size = zmq_msg.size();
     // for(int i = 0; i < )
     // {
@@ -109,7 +108,8 @@ int main(int argc, char** argv) {
     //   std::cout << data[i];
     // }
     printf("\n");
-
+    cv::imshow("received img", img);
+    cv::waitKey(1);
     printf("received message!\n");
   }
 

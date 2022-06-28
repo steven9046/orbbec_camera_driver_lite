@@ -155,3 +155,7 @@
      FlatbufferMessage zmq_communicater -> orbbec_camera_driver
      zmq 包里 sub 用到了反序列化的函数，已经深度绑定了，所以把 flatbuffer 和 zmq 分开的意义不大了
      那还不如把这两个包合成一个
+     合成了一个包
+## v2.2.0 @2022.6.21 ##    
+* 1. 生成imge的消息格式
+     flatc -c --gen-object-api --reflect-types --reflect-names image.fbs

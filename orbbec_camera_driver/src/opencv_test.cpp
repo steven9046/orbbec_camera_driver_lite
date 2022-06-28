@@ -23,13 +23,9 @@
 #include <uvc_camera.h>
 // for opencv
 #include <opencv4/opencv2/opencv.hpp>
-// for flatbaffer message
-#include "image_generated.h"
-// for zmq_publisher
-#include "zmq_publisher.hpp"
 
-// Input camera bus number to choose a specific camera. You can use "lsusb" to check which bus your camera is on.
-// https://www.cnblogs.com/avril/archive/2010/03/22/1691477.html
+using namespace cv;
+
 int main(int argc, char** argv) {
   printf("Orbbec camera driver!\n");
   printf("Chooseing camera on bus:%s\n", argv[1]);
@@ -45,75 +41,61 @@ int main(int argc, char** argv) {
   oni_camera.seOnitLDP(false);
   oni_camera.getCameraParams();
 
-  cv::Mat imDepth;
-  cv::namedWindow("raw_depth", 0);
-  cv::namedWindow("rgb_img", 1);
+  Mat imDepth;
+  namedWindow("raw_depth", 0);
+  namedWindow("rgb_img", 1);
 
-  // 消息发布
-  zmq_communicater::ZMQPublisher pub_;
-    pub_.read_zmq_topic_to_port_file();
-    std::string topic_name = "topic_1";
-    pub_.init_publisher(topic_name);
-  // 创建消息并序列化
-  // flatbuffers::FlatBufferBuilder builder;
-  // // auto Camera = new Message::Camera; // 默认构造函数被删除了
-  // // 创建内部格式数据
-  // auto name = builder.CreateString("Orbbec");
-  // float fx = 454.343;
-  // float fy = 454.343;
-  // float cx = 327.461;
-  // float cy = 246.672;
-  // float k1 = 0.0552932;
-  // float k2 = -0.0753816;
-  // float k3 = 0.;
-  // // 创建对象
-  // auto camera = Message::CreateCamera(builder, name, fx, fy, cx, cy, k1, k2, k3);
-  // builder.Finish(camera);
-  // // 获取数据区指针与大小
-  // uint8_t* buf = builder.GetBufferPointer();
-  // int size = builder.GetSize();
+  Matx<float, 2, 2> a = {2,4,5,6};
+  Matx<float, 2, 2> b = {2,2,2,2};
+  auto c = a.div(b);
+  std::cout << c(0,0) << " " << c(0,1) << std::endl;
+  std::cout << c(1,0) << " " << c(1,1) << std::endl;
+
+  // std::cout << c(0,0) << " " << c(0,1) << " " << c(0,2) << std::endl;
+  // std::cout << c(1,0) << " " << c(1,1) << " " << c(1,2) << std::endl;
+  // std::cout << c(8) << " " << c(9) << c(10) << " " << c(11) << std::endl;
+  // std::cout << c(12) << " " << c(13) << c(14) << " " << c(15) << std::endl;
+
+
+  // std::cout << c(0,0) << " " << c(0,1) << std::endl;
+  // std::cout << c(1,0) << " " << c(1,1) << std::endl;
+  // std::cout << f(0,0) << " " << f(0,1) << std::endl;
+  // std::cout << f(1,0) << " " << f(1,1) << std::endl;
+  
+  // std::cout << g(0,0) << " " << g(0,1) << std::endl;
+  // std::cout << g(1,0) << " " << g(1,1) << std::endl;
+  // std::cout << b[0] << " " << b[1] << " " << b[2] << std::endl;
+  // auto c = a.mul(b);
+  // std::cout << c[0] << " " << c[1] << " " << c[2] << std::endl;
+  // auto d = a.cross(b);
+  // std::cout << d[0] << " " << d[1] << " " << d[2] << std::endl;
 
   while (1) {
     // DEPTH
     oni_camera.GetOniStreamData();
     if (oni_camera.oni_depth_frame_.isValid()) {
       openni::DepthPixel* pDepth = (openni::DepthPixel*)oni_camera.oni_depth_frame_.getData();
-      cv::Mat raw_depth(ONI_HEIGHT, ONI_WIDTH, CV_16UC1, pDepth);
+      Mat raw_depth(ONI_HEIGHT, ONI_WIDTH, CV_16UC1, pDepth);
       // Show depth
       oni_camera.computeConvertedDepth(raw_depth, imDepth);
       if (!imDepth.empty()) {
-        cv::imshow("raw_depth", imDepth);
-        cv::waitKey(1);
+        imshow("raw_depth", imDepth);
+        waitKey(1);
       }
     }
 
     // RGB
-    cv::Mat rgb_img = uvc_camera.getImage();
-    cv::Mat image_for_show = rgb_img.clone();
+    Mat rgb_img = uvc_camera.getImage();
+    Mat image_for_show = rgb_img.clone();
     int height = rgb_img.rows;
     int width = rgb_img.cols;
     if (!rgb_img.empty()) {
       
 
 
-      cv::imshow("rgb_img", image_for_show);
-      cv::waitKey(1);
+      imshow("rgb_img", image_for_show);
+      waitKey(1);
 
-      /********* pack image data **********/
-      cv::cvtColor(image_for_show, image_for_show, cv::COLOR_RGBA2GRAY);
-      flatbuffers::FlatBufferBuilder builder;
-      uint8_t *data = image_for_show.data;
-      int img_size = height * width;
-      std::vector<uint8_t> data_vec(data, data + img_size);
-      // std::cout << " data_vec： " << data_vec[1] << std::endl;
-      auto img = Message::CreateImageDirect(builder, height, width, &data_vec);
-      builder.Finish(img);
-      // 获取数据区指针与大小
-      uint8_t* buf = builder.GetBufferPointer();
-      int size = builder.GetSize();
-      zmq::message_t msg(buf, size);
-      pub_.publish(msg);
-      /************************************/
     }
     
     usleep(100);

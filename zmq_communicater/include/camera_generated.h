@@ -8,130 +8,11 @@
 
 namespace Message {
 
-struct Image;
-struct ImageBuilder;
-struct ImageT;
-
 struct Camera;
 struct CameraBuilder;
 struct CameraT;
 
-bool operator==(const ImageT &lhs, const ImageT &rhs);
-bool operator!=(const ImageT &lhs, const ImageT &rhs);
-bool operator==(const CameraT &lhs, const CameraT &rhs);
-bool operator!=(const CameraT &lhs, const CameraT &rhs);
-
-inline const flatbuffers::TypeTable *ImageTypeTable();
-
 inline const flatbuffers::TypeTable *CameraTypeTable();
-
-struct ImageT : public flatbuffers::NativeTable {
-  typedef Image TableType;
-  int32_t height;
-  int32_t width;
-  std::vector<uint8_t> data;
-  ImageT()
-      : height(0),
-        width(0) {
-  }
-};
-
-inline bool operator==(const ImageT &lhs, const ImageT &rhs) {
-  return
-      (lhs.height == rhs.height) &&
-      (lhs.width == rhs.width) &&
-      (lhs.data == rhs.data);
-}
-
-inline bool operator!=(const ImageT &lhs, const ImageT &rhs) {
-    return !(lhs == rhs);
-}
-
-
-struct Image FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  typedef ImageT NativeTableType;
-  typedef ImageBuilder Builder;
-  static const flatbuffers::TypeTable *MiniReflectTypeTable() {
-    return ImageTypeTable();
-  }
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_HEIGHT = 4,
-    VT_WIDTH = 6,
-    VT_DATA = 8
-  };
-  int32_t height() const {
-    return GetField<int32_t>(VT_HEIGHT, 0);
-  }
-  int32_t width() const {
-    return GetField<int32_t>(VT_WIDTH, 0);
-  }
-  const flatbuffers::Vector<uint8_t> *data() const {
-    return GetPointer<const flatbuffers::Vector<uint8_t> *>(VT_DATA);
-  }
-  bool Verify(flatbuffers::Verifier &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<int32_t>(verifier, VT_HEIGHT) &&
-           VerifyField<int32_t>(verifier, VT_WIDTH) &&
-           VerifyOffset(verifier, VT_DATA) &&
-           verifier.VerifyVector(data()) &&
-           verifier.EndTable();
-  }
-  ImageT *UnPack(const flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  void UnPackTo(ImageT *_o, const flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  static flatbuffers::Offset<Image> Pack(flatbuffers::FlatBufferBuilder &_fbb, const ImageT* _o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
-};
-
-struct ImageBuilder {
-  typedef Image Table;
-  flatbuffers::FlatBufferBuilder &fbb_;
-  flatbuffers::uoffset_t start_;
-  void add_height(int32_t height) {
-    fbb_.AddElement<int32_t>(Image::VT_HEIGHT, height, 0);
-  }
-  void add_width(int32_t width) {
-    fbb_.AddElement<int32_t>(Image::VT_WIDTH, width, 0);
-  }
-  void add_data(flatbuffers::Offset<flatbuffers::Vector<uint8_t>> data) {
-    fbb_.AddOffset(Image::VT_DATA, data);
-  }
-  explicit ImageBuilder(flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ImageBuilder &operator=(const ImageBuilder &);
-  flatbuffers::Offset<Image> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = flatbuffers::Offset<Image>(end);
-    return o;
-  }
-};
-
-inline flatbuffers::Offset<Image> CreateImage(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    int32_t height = 0,
-    int32_t width = 0,
-    flatbuffers::Offset<flatbuffers::Vector<uint8_t>> data = 0) {
-  ImageBuilder builder_(_fbb);
-  builder_.add_data(data);
-  builder_.add_width(width);
-  builder_.add_height(height);
-  return builder_.Finish();
-}
-
-inline flatbuffers::Offset<Image> CreateImageDirect(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    int32_t height = 0,
-    int32_t width = 0,
-    const std::vector<uint8_t> *data = nullptr) {
-  auto data__ = data ? _fbb.CreateVector<uint8_t>(*data) : 0;
-  return Message::CreateImage(
-      _fbb,
-      height,
-      width,
-      data__);
-}
-
-flatbuffers::Offset<Image> CreateImage(flatbuffers::FlatBufferBuilder &_fbb, const ImageT *_o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
 
 struct CameraT : public flatbuffers::NativeTable {
   typedef Camera TableType;
@@ -153,23 +34,6 @@ struct CameraT : public flatbuffers::NativeTable {
         k3(0.0f) {
   }
 };
-
-inline bool operator==(const CameraT &lhs, const CameraT &rhs) {
-  return
-      (lhs.name == rhs.name) &&
-      (lhs.fx == rhs.fx) &&
-      (lhs.fy == rhs.fy) &&
-      (lhs.cx == rhs.cx) &&
-      (lhs.cy == rhs.cy) &&
-      (lhs.k1 == rhs.k1) &&
-      (lhs.k2 == rhs.k2) &&
-      (lhs.k3 == rhs.k3);
-}
-
-inline bool operator!=(const CameraT &lhs, const CameraT &rhs) {
-    return !(lhs == rhs);
-}
-
 
 struct Camera FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   typedef CameraT NativeTableType;
@@ -316,38 +180,6 @@ inline flatbuffers::Offset<Camera> CreateCameraDirect(
 
 flatbuffers::Offset<Camera> CreateCamera(flatbuffers::FlatBufferBuilder &_fbb, const CameraT *_o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
 
-inline ImageT *Image::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<Message::ImageT> _o = std::unique_ptr<Message::ImageT>(new ImageT());
-  UnPackTo(_o.get(), _resolver);
-  return _o.release();
-}
-
-inline void Image::UnPackTo(ImageT *_o, const flatbuffers::resolver_function_t *_resolver) const {
-  (void)_o;
-  (void)_resolver;
-  { auto _e = height(); _o->height = _e; }
-  { auto _e = width(); _o->width = _e; }
-  { auto _e = data(); if (_e) { _o->data.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->data[_i] = _e->Get(_i); } } }
-}
-
-inline flatbuffers::Offset<Image> Image::Pack(flatbuffers::FlatBufferBuilder &_fbb, const ImageT* _o, const flatbuffers::rehasher_function_t *_rehasher) {
-  return CreateImage(_fbb, _o, _rehasher);
-}
-
-inline flatbuffers::Offset<Image> CreateImage(flatbuffers::FlatBufferBuilder &_fbb, const ImageT *_o, const flatbuffers::rehasher_function_t *_rehasher) {
-  (void)_rehasher;
-  (void)_o;
-  struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const ImageT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  auto _height = _o->height;
-  auto _width = _o->width;
-  auto _data = _o->data.size() ? _fbb.CreateVector(_o->data) : 0;
-  return Message::CreateImage(
-      _fbb,
-      _height,
-      _width,
-      _data);
-}
-
 inline CameraT *Camera::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
   std::unique_ptr<Message::CameraT> _o = std::unique_ptr<Message::CameraT>(new CameraT());
   UnPackTo(_o.get(), _resolver);
@@ -393,23 +225,6 @@ inline flatbuffers::Offset<Camera> CreateCamera(flatbuffers::FlatBufferBuilder &
       _k1,
       _k2,
       _k3);
-}
-
-inline const flatbuffers::TypeTable *ImageTypeTable() {
-  static const flatbuffers::TypeCode type_codes[] = {
-    { flatbuffers::ET_INT, 0, -1 },
-    { flatbuffers::ET_INT, 0, -1 },
-    { flatbuffers::ET_UCHAR, 1, -1 }
-  };
-  static const char * const names[] = {
-    "height",
-    "width",
-    "data"
-  };
-  static const flatbuffers::TypeTable tt = {
-    flatbuffers::ST_TABLE, 3, type_codes, nullptr, nullptr, names
-  };
-  return &tt;
 }
 
 inline const flatbuffers::TypeTable *CameraTypeTable() {

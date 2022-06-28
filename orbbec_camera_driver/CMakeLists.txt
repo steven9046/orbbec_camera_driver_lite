@@ -63,6 +63,31 @@ target_link_libraries(orbbec_camera_node PUBLIC
                 zmq_communicater
                 orbbec_camera_driver
                 )
+# 接收测试节点
+add_executable(reciever_node
+                src/reciever.cpp)
+                
+target_link_libraries(reciever_node PUBLIC
+                ${OpenCV_LIBRARIES}
+                ${UVC_LIBS}
+                ${OPENNI2_LIBS}
+                ${Eigen_LIBRARIES}
+                zmq_communicater
+                orbbec_camera_driver
+                )
+
+
+# 接收测试节点
+add_executable(opencv_test
+                src/opencv_test.cpp)
+target_link_libraries(opencv_test PUBLIC
+                ${OpenCV_LIBRARIES}
+                ${UVC_LIBS}
+                ${OPENNI2_LIBS}
+                ${Eigen_LIBRARIES}
+                zmq_communicater
+                orbbec_camera_driver
+                )
 
 # file(COPY ${CMAKE_CURRENT_LIST_DIR}/resource DESTINATION ${CMAKE_BINARY_DIR}/)
 # add_definitions(-DRESOURCE_DIR="${CMAKE_BINARY_DIR}/resource/")
