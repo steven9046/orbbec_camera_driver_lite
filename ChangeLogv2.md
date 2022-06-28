@@ -159,3 +159,5 @@
 ## v2.2.0 @2022.6.21 ##    
 * 1. 生成imge的消息格式
      flatc -c --gen-object-api --reflect-types --reflect-names image.fbs
+* 2. 生成 apriltag 图片
+     [官方方法](https://github.com/AprilRobotics/apriltag-generation)
